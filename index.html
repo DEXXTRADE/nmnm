@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>The Wedding of Arina & Bagas | Timeless Snapshot</title>
-  <meta name="description" content="Undangan Pernikahan Digital Eksklusif Arina & Bagas - Tema Timeless Snapshot. Murni HTML5, CSS3, dan Vanilla JavaScript siap deploy langsung ke GitHub Pages." />
-  <meta property="og:title" content="The Wedding of Arina & Bagas | Timeless Snapshot" />
-  <meta property="og:description" content="Undangan Pernikahan Digital Eksklusif Arina & Bagas. Buka undangan digital di sini." />
+  <title>The Wedding of Arina &amp; Bagas | Timeless Snapshot</title>
+  <meta name="description" content="Undangan Pernikahan Digital Eksklusif Arina &amp; Bagas. Desain Timeless Snapshot murni HTML5, CSS3, dan Vanilla JS oleh DexxDigital." />
+  <meta property="og:title" content="The Wedding of Arina &amp; Bagas | Timeless Snapshot" />
+  <meta property="og:description" content="Undangan Pernikahan Digital Eksklusif Arina &amp; Bagas. Buka undangan digital di sini." />
   <meta property="og:type" content="website" />
   
-  <!-- Tailwind Play CDN for pure zero-build HTML standalone deploy -->
+  <!-- Tailwind CSS CDN for zero-build standalone HTML architecture -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -27,7 +27,7 @@
     }
   </script>
 
-  <!-- Google Fonts: Luxury Typography -->
+  <!-- Google Fonts: Editorial Luxury Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -47,7 +47,6 @@
     ::-webkit-scrollbar-thumb { background: #78716c; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
 
-    /* Keyframe animations */
     @keyframes spinSlow {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -63,15 +62,17 @@
   <div id="bgWatermark" class="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-25 filter blur-[2px] pointer-events-none scale-105 transition-all duration-1000"></div>
   <div id="themeOverlay" class="fixed inset-0 z-0 bg-gradient-to-b from-black/90 via-black/70 to-stone-950 pointer-events-none"></div>
 
-  <!-- Particle Canvas -->
+  <!-- Particle Canvas: Kelopak & Partikel Bintang -->
   <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-30 opacity-70"></canvas>
 
   <!-- Background Audio Player Element -->
   <audio id="weddingAudio" loop preload="auto"></audio>
 
   <!-- Floating Audio Toggle Button (Top Right) -->
-  <button id="btnMusicToggle" aria-label="Putar Musik Latar" class="fixed top-5 right-5 z-40 p-3 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 shadow-xl flex items-center justify-center bg-black/60 text-stone-300 hover:text-white">
+  <button id="btnMusicToggle" aria-label="Audio Kontrol" class="fixed top-5 right-5 z-40 p-3 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 shadow-xl flex items-center justify-center bg-black/60 text-stone-300 hover:text-white cursor-pointer">
+    <!-- SVG Volume On -->
     <svg id="iconMusicPlay" class="w-5 h-5 hidden text-amber-200 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+    <!-- SVG Volume Off -->
     <svg id="iconMusicMute" class="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
   </button>
 
@@ -80,7 +81,7 @@
     
     <!-- ================= COVER SECTION ================= -->
     <section id="cover-section" class="min-h-screen flex flex-col justify-between items-center text-center px-4 py-12 relative">
-      <!-- Subtle Frame Corner Ornaments -->
+      <!-- Frame Corner Ornaments -->
       <div class="absolute top-6 left-6 w-12 h-12 border-t-2 border-l-2 border-amber-500/40 pointer-events-none"></div>
       <div class="absolute top-6 right-6 w-12 h-12 border-t-2 border-r-2 border-amber-500/40 pointer-events-none"></div>
       <div class="absolute bottom-6 left-6 w-12 h-12 border-b-2 border-l-2 border-amber-500/40 pointer-events-none"></div>
@@ -100,7 +101,7 @@
           <!-- Couple Big Names Overlay -->
           <div class="absolute bottom-6 inset-x-0 px-4 text-center">
             <h1 id="textCoupleNames" class="text-4xl sm:text-5xl font-serif text-white tracking-wide font-normal drop-shadow-md">
-              Arina <span class="text-amber-400 font-script text-5xl">&</span> Bagas
+              Arina <span class="text-amber-400 font-script text-5xl">&amp;</span> Bagas
             </h1>
             <p id="textHeroDate" class="text-xs tracking-widest text-amber-200 mt-2 font-cinzel">
               Rabu, 30 Desember 2026
@@ -141,7 +142,7 @@
           </p>
           <div class="w-16 h-0.5 bg-amber-500/40 mx-auto my-4"></div>
           <p id="quoteTranslation" class="text-xs sm:text-sm text-stone-300 leading-relaxed italic font-light">
-            "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang."
+            &quot;Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.&quot;
           </p>
           <span id="quoteSource" class="block text-xs uppercase tracking-widest text-amber-400 font-cinzel mt-4">
             QS. Ar-Rum: 21
@@ -174,7 +175,7 @@
             </span>
             <p class="text-xs text-stone-400 mt-2">Putri dari Pasangan:</p>
             <p id="brideParents" class="text-sm text-stone-200 font-medium mt-0.5">
-              Bpk. Sumarni Hidayat & Ibu Maryati Susanti
+              Bpk. Sumarni Hidayat &amp; Ibu Maryati Susanti
             </p>
             <a id="brideInstagramLink" href="https://instagram.com/arina.febriana" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 mt-4 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs transition">
               <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -195,7 +196,7 @@
             </span>
             <p class="text-xs text-stone-400 mt-2">Putra dari Pasangan:</p>
             <p id="groomParents" class="text-sm text-stone-200 font-medium mt-0.5">
-              Bpk. Samuel Sudarsono & Ibu Masuya Rahayu
+              Bpk. Samuel Sudarsono &amp; Ibu Masuya Rahayu
             </p>
             <a id="groomInstagramLink" href="https://instagram.com/bagas.wedding" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 mt-4 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs transition">
               <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -209,7 +210,7 @@
       <section class="px-4 py-8">
         <div class="text-center mb-6">
           <span class="text-xs uppercase tracking-widest text-amber-400 font-medium">Hitung Mundur Hari Bahagia</span>
-          <h3 class="text-3xl sm:text-4xl font-serif text-amber-100 mt-2">Waktu & Tempat Acara</h3>
+          <h3 class="text-3xl sm:text-4xl font-serif text-amber-100 mt-2">Waktu &amp; Tempat Acara</h3>
         </div>
 
         <!-- Countdown Timer -->
@@ -237,46 +238,62 @@
           <!-- Akad Card -->
           <div class="bg-stone-900/80 backdrop-blur-xl border border-stone-800 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
             <div class="space-y-4">
-              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 text-xs border border-amber-500/20">
-                ✦ Akad Nikah
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 text-xs border border-amber-500/20">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                <span>Akad Nikah</span>
               </span>
               <h4 id="akadDate" class="text-2xl font-serif text-amber-100">Rabu, 30 Desember 2026</h4>
               <div class="space-y-2 text-xs text-stone-300">
-                <p id="akadTime" class="flex items-center gap-2">⏰ 08:00 - 10:00 WIB</p>
-                <div>
-                  <strong id="akadVenue" class="block text-stone-100">Masjid Raya Al-Jabbar & The Trans Luxury Ballroom</strong>
-                  <span id="akadAddress" class="text-stone-400">Jl. Gatot Subroto No.289, Cibangkong, Kota Bandung, Jawa Barat 40273</span>
+                <p id="akadTime" class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>08:00 - 10:00 WIB</span>
+                </p>
+                <div class="flex items-start gap-2">
+                  <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <div>
+                    <strong id="akadVenue" class="block text-stone-100">Masjid Raya Al-Mashun</strong>
+                    <span id="akadAddress" class="text-stone-400">Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <a id="akadMapUrl" href="https://maps.app.goo.gl/aAEqaPAFNVCK1gvaA" target="_blank" rel="noreferrer" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-amber-200 text-xs font-medium flex items-center justify-center gap-2 transition">
-              🧭 Buka Google Maps
+            <a id="akadMapUrl" href="https://maps.app.goo.gl/V64bA13rpYZs6AAw6" target="_blank" rel="noreferrer" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/30 text-amber-200 text-xs font-medium flex items-center justify-center gap-2 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+              <span>Buka Google Maps</span>
             </a>
           </div>
 
           <!-- Resepsi Card -->
           <div class="bg-stone-900/80 backdrop-blur-xl border border-stone-800 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
             <div class="space-y-4">
-              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 text-xs border border-rose-500/20">
-                ♥ Resepsi Pernikahan
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 text-xs border border-rose-500/20">
+                <svg class="w-3.5 h-3.5 text-rose-400 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Resepsi Pernikahan</span>
               </span>
               <h4 id="resepsiDate" class="text-2xl font-serif text-amber-100">Kamis, 31 Desember 2026</h4>
               <div class="space-y-2 text-xs text-stone-300">
-                <p id="resepsiTime" class="flex items-center gap-2">⏰ 11:00 - 14:00 WIB</p>
-                <div>
-                  <strong id="resepsiVenue" class="block text-stone-100">Grand Ballroom The Trans Luxury Hotel</strong>
-                  <span id="resepsiAddress" class="text-stone-400">Jl. Gatot Subroto No.289, Cibangkong, Kota Bandung, Jawa Barat 40273</span>
+                <p id="resepsiTime" class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>11:00 - 14:00 WIB</span>
+                </p>
+                <div class="flex items-start gap-2">
+                  <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <div>
+                    <strong id="resepsiVenue" class="block text-stone-100">Masjid Raya Al-Mashun</strong>
+                    <span id="resepsiAddress" class="text-stone-400">Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <a id="resepsiMapUrl" href="https://maps.app.goo.gl/aAEqaPAFNVCK1gvaA" target="_blank" rel="noreferrer" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/30 text-rose-200 text-xs font-medium flex items-center justify-center gap-2 transition">
-              🧭 Buka Google Maps
+            <a id="resepsiMapUrl" href="https://maps.app.goo.gl/V64bA13rpYZs6AAw6" target="_blank" rel="noreferrer" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/30 text-rose-200 text-xs font-medium flex items-center justify-center gap-2 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+              <span>Buka Google Maps</span>
             </a>
           </div>
         </div>
       </section>
 
-      <!-- ================= GALLERY PREWEDDING SECTION (MURNI FOTO SAJA SESUAI REVISI) ================= -->
+      <!-- ================= GALLERY PREWEDDING SECTION (MURNI FOTO SAJA) ================= -->
       <section id="gallery-section" class="px-4 py-12 max-w-5xl mx-auto">
         <div class="text-center mb-10">
           <span class="text-xs uppercase tracking-widest text-amber-400 font-medium">Momen Bahagia Kami</span>
@@ -296,7 +313,7 @@
       <section id="gift-section" class="px-4 py-8 max-w-xl mx-auto">
         <div class="bg-stone-900/90 backdrop-blur-xl border border-stone-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
           <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 text-amber-300 mb-4 border border-amber-500/20">
-            🎁
+            <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
           </div>
           <h3 class="text-2xl sm:text-3xl font-serif text-amber-100 mb-2">Amplop Digital</h3>
           <p class="text-sm text-stone-400 mb-6 max-w-md mx-auto">
@@ -309,18 +326,19 @@
               <div>
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-xs font-bold uppercase tracking-wider text-blue-400">DANA E-Wallet</span>
-                  <span>📱</span>
+                  <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 </div>
                 <p class="text-xs text-stone-400 mb-1">Nomor Akun:</p>
                 <p id="envelopeDanaNumber" class="text-lg font-mono font-bold text-white tracking-wider mb-2">
                   0812-3456-7890
                 </p>
                 <p class="text-xs text-stone-300">
-                  a.n <span id="envelopeDanaName" class="font-semibold text-white">Bagas Sadewa & Arina</span>
+                  a.n <span id="envelopeDanaName" class="font-semibold text-white">Bagas Sadewa &amp; Arina</span>
                 </p>
               </div>
 
               <button id="btnCopyDana" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 text-blue-200 text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                 <span id="labelCopyDana">Salin No. DANA</span>
               </button>
             </div>
@@ -330,16 +348,17 @@
               <div>
                 <div class="flex items-center justify-between mb-3">
                   <span class="text-xs font-bold uppercase tracking-wider text-amber-400">QRIS Instant Pay</span>
-                  <span>📸</span>
+                  <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
                 </div>
                 <div class="bg-white p-2.5 rounded-xl flex items-center justify-center w-28 h-28 mx-auto my-2 shadow">
-                  <img id="imgQrisPreview" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DANA-ARINA-BAGAS-WEDDING" alt="QRIS Wedding" class="w-full h-full object-contain" />
+                  <img id="imgQrisPreview" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&amp;data=DANA-ARINA-BAGAS-WEDDING" alt="QRIS Wedding" class="w-full h-full object-contain" />
                 </div>
-                <p class="text-[11px] text-center text-stone-400">Support Semua Bank & E-Wallet</p>
+                <p class="text-[11px] text-center text-stone-400">Support Semua Bank &amp; E-Wallet</p>
               </div>
 
               <button id="btnEnlargeQris" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 text-amber-200 text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer">
-                🔍 Perbesar QRIS
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path></svg>
+                <span>Perbesar QRIS</span>
               </button>
             </div>
           </div>
@@ -351,9 +370,9 @@
         <div class="bg-stone-900/90 backdrop-blur-xl border border-stone-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
           <div class="text-center mb-6">
             <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 text-amber-300 mb-3 border border-amber-500/20">
-              💬
+              <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
             </div>
-            <h3 class="text-2xl sm:text-3xl font-serif text-amber-100">Buku Tamu & Ucapan Doa</h3>
+            <h3 class="text-2xl sm:text-3xl font-serif text-amber-100">Buku Tamu &amp; Ucapan Doa</h3>
             <p class="text-sm text-stone-400 mt-2 max-w-md mx-auto">
               Tinggalkan doa restu dan pesan hangat untuk kedua mempelai secara real-time.
             </p>
@@ -368,14 +387,14 @@
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider text-stone-300 mb-2">Konfirmasi Kehadiran (RSVP) *</label>
               <div class="grid grid-cols-3 gap-2">
-                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-amber-600 text-white border-amber-500" data-status="Hadir">✓ Hadir</button>
-                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-stone-950/50 text-stone-300 border-stone-800 hover:border-stone-700" data-status="Tidak Hadir">✗ Tidak Hadir</button>
-                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-stone-950/50 text-stone-300 border-stone-800 hover:border-stone-700" data-status="Ragu-ragu">? Ragu-ragu</button>
+                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-amber-600 text-white border-amber-500 cursor-pointer" data-status="Hadir">✓ Hadir</button>
+                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-stone-950/50 text-stone-300 border-stone-800 hover:border-stone-700 cursor-pointer" data-status="Tidak Hadir">✗ Tidak Hadir</button>
+                <button type="button" class="btn-rsvp py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-center bg-stone-950/50 text-stone-300 border-stone-800 hover:border-stone-700 cursor-pointer" data-status="Ragu-ragu">? Ragu-ragu</button>
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-300 mb-2">Pesan & Doa Restu *</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-300 mb-2">Pesan &amp; Doa Restu *</label>
               <textarea id="inputGuestMessage" rows="3" required placeholder="Tuliskan ucapan selamat dan doa tulus Anda di sini..." class="w-full px-4 py-3 bg-stone-950/70 border border-stone-700/80 rounded-xl text-stone-100 text-sm focus:outline-none focus:border-amber-400 transition"></textarea>
             </div>
 
@@ -384,28 +403,39 @@
               <label class="block text-xs font-semibold uppercase tracking-wider text-stone-300 mb-2">Kirim Foto Bersama / Momen (Opsional)</label>
               <div class="flex items-center gap-4">
                 <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-stone-800/80 hover:bg-stone-700 border border-stone-700 rounded-xl text-xs font-medium text-stone-200 transition">
-                  📷 Pilih Foto Tamu
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <span>Pilih Foto Tamu</span>
                   <input id="inputGuestPhoto" type="file" accept="image/*" class="hidden" />
                 </label>
                 <div id="guestPhotoPreviewContainer" class="hidden relative">
                   <img id="imgGuestPreview" src="" alt="Preview" class="w-12 h-12 rounded-lg object-cover border border-amber-500/50 shadow-md" />
-                  <button type="button" id="btnRemoveGuestPhoto" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full text-xs flex items-center justify-center">×</button>
+                  <button type="button" id="btnRemoveGuestPhoto" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full text-xs flex items-center justify-center cursor-pointer">×</button>
                 </div>
               </div>
             </div>
 
             <button type="submit" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-sm rounded-xl shadow-lg shadow-amber-600/30 transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer">
-              <span>Kirim Ucapan & Doa</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+              <span>Kirim Ucapan &amp; Doa</span>
             </button>
+            <div id="wishSuccessNotice" class="hidden mt-3 p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center justify-between">
+              <div>
+                <strong class="text-emerald-300">Doa Anda telah terkirim!</strong> Terima kasih atas ucapan hangatnya.
+              </div>
+              <a id="linkSendWishWa" href="#" target="_blank" rel="noreferrer" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-medium text-xs whitespace-nowrap ml-2 transition">
+                Kirim ke WA
+              </a>
+            </div>
           </form>
         </div>
 
         <!-- Wishes Stream Feed -->
         <div class="mt-8 space-y-4">
           <div class="flex items-center justify-between pb-2 border-b border-stone-800 text-xs text-stone-400">
-            <span id="wishesCountText" class="font-medium tracking-wide">Menampilkan 4 Doa & Ucapan</span>
+            <span id="wishesCountText" class="font-medium tracking-wide">Menampilkan 4 Doa &amp; Ucapan</span>
             <span class="flex items-center gap-1.5 text-amber-400">
-              <span>✨ Live Guestbook</span>
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.2-6.3-4.6-6.3 4.6 2.3-7.2-6-4.6h7.6z"/></svg>
+              <span>Live Guestbook</span>
             </span>
           </div>
 
@@ -420,30 +450,31 @@
         <p class="text-xs text-stone-400 italic">
           Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
         </p>
-        <h4 id="closingCoupleNames" class="text-xl font-serif text-amber-200">Arina & Bagas</h4>
+        <h4 id="closingCoupleNames" class="text-xl font-serif text-amber-200">Arina &amp; Bagas</h4>
         <p class="text-[11px] text-stone-500">Beserta segenap keluarga besar kedua mempelai</p>
       </section>
     </div>
 
-    <!-- ================= FOOTER & DEVELOPER (TAMPILAN PUBLIK BERSIH TANPA TOMBOL ADMIN) ================= -->
+    <!-- ================= FOOTER & DEVELOPER (DEXXDIGITAL) ================= -->
     <footer class="mt-16 py-8 px-4 border-t border-stone-900 bg-stone-950/90 text-center space-y-4">
       <div class="flex items-center justify-center gap-2 text-xs text-stone-400">
-        <span id="footerCopyright">© 2026 Arina & Bagas</span>
+        <span id="footerCopyright" class="cursor-pointer select-none" title="Klik 5x untuk akses pengembang">© 2026 Arina &amp; Bagas</span>
         <span>·</span>
         <span>All Rights Reserved</span>
       </div>
 
-      <!-- Agency Developer Watermark -->
+      <!-- Developer Watermark: DexxDigital -->
       <div class="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 max-w-md mx-auto shadow-lg space-y-2">
         <span class="text-[10px] uppercase tracking-widest text-amber-400 font-semibold block">
           Website Dibuat Oleh:
         </span>
-        <h5 id="footerAgencyName" class="text-sm font-serif font-bold text-white">VowCraft Wedding Tech</h5>
+        <h5 id="footerAgencyName" class="text-sm font-serif font-bold text-white tracking-wide">DexxDigital</h5>
         <p id="footerAgencyTagline" class="text-xs text-stone-400">
-          Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif
+          Jasa Pembuatan Website Undangan Pernikahan Digital Elegan &amp; Interaktif
         </p>
         <div class="flex items-center justify-center gap-4 pt-2">
-          <a id="footerAgencyWa" href="https://wa.me/6281234567890?text=Halo!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital." target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-700/30 hover:bg-emerald-700/50 border border-emerald-500/40 text-emerald-200 text-xs font-medium transition">
+          <a id="footerAgencyWa" href="https://wa.me/6281234567890?text=Halo%20DexxDigital!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital." target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-700/30 hover:bg-emerald-700/50 border border-emerald-500/40 text-emerald-200 text-xs font-medium transition cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.112.551 4.095 1.518 5.819l-1.618 5.91 6.059-1.589c1.664.908 3.567 1.424 5.589 1.425 6.627 0 12-5.373 12-12s-5.373-12-12-12z"/></svg>
             <span>WhatsApp Pembuat Web</span>
           </a>
         </div>
@@ -451,7 +482,7 @@
     </footer>
   </div>
 
-  <!-- ================= LIGHTBOX MODAL UNTUK PERBESAR FOTO & QRIS ================= -->
+  <!-- ================= LIGHTBOX MODAL ================= -->
   <div id="modalLightbox" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="relative max-w-4xl max-h-[90vh]">
       <button id="btnCloseLightbox" class="absolute -top-10 right-0 text-white text-3xl hover:text-amber-400 p-2 cursor-pointer">✕</button>
@@ -460,8 +491,7 @@
     </div>
   </div>
 
-  <!-- ================= HIDDEN ADMIN PANEL (TIDAK NAMPAK DI PUBLIK) ================= -->
-  <!-- Dapat dibuka hanya via URL ?admin=1 atau shortcut keyboard [Ctrl + Shift + A] / klik tersembunyi 5x di nama footer -->
+  <!-- ================= HIDDEN ADMIN PANEL (TERSEMBUNYI) ================= -->
   <div id="modalAdmin" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
     <div class="bg-stone-900 border border-amber-500/40 rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
       
@@ -469,22 +499,22 @@
       <div class="p-4 sm:p-6 border-b border-stone-800 flex items-center justify-between bg-stone-950/80">
         <div>
           <h3 class="text-lg font-serif font-bold text-amber-100 flex items-center gap-2">
-            <span>VowCraft Admin Panel</span>
+            <span>DexxDigital Admin Console</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-sans">
               Mode Rahasia Pengembang
             </span>
           </h3>
-          <p class="text-xs text-stone-400">Panel Tersembunyi: Kelola teks, foto, galeri, hapus komentar & ganti sandi</p>
+          <p class="text-xs text-stone-400">Kelola teks, foto, galeri, hapus komentar &amp; ganti sandi tanpa koding</p>
         </div>
         <button id="btnCloseAdmin" class="text-stone-400 hover:text-white p-2 rounded-lg bg-stone-800 text-sm cursor-pointer">✕ Tutup</button>
       </div>
 
       <!-- Login View -->
       <div id="adminLoginSection" class="p-8 max-w-md mx-auto my-auto text-center w-full">
-        <div class="w-16 h-16 rounded-2xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">
-          🔐
+        <div class="w-16 h-16 rounded-2xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4 text-amber-400">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
         </div>
-        <h4 class="text-xl font-serif text-white mb-2">Login Admin Jasa Web</h4>
+        <h4 class="text-xl font-serif text-white mb-2">Login Admin DexxDigital</h4>
         <p class="text-xs text-stone-400 mb-6">
           Halaman ini tersembunyi dari publik. Masuk untuk mengedit konten klien.
         </p>
@@ -517,17 +547,17 @@
       <div id="adminDashboardSection" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden">
         <!-- Sidebar Navigation -->
         <div class="w-full md:w-56 bg-stone-950/70 p-3 border-r border-stone-800 flex md:flex-col gap-1 overflow-x-auto shrink-0">
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap bg-amber-600/30 text-amber-200 border border-amber-500/40" data-tab="tab-general">🎨 Tema & Warna</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-couple">👥 Profil Mempelai</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-events">📅 Acara & Tanggal</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-gallery">🖼️ Galeri Foto (File)</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-envelope">💳 DANA & QRIS</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-wishes">🗑️ Moderasi Buku Tamu</button>
-          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900" data-tab="tab-security">🔑 Ganti Sandi</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap bg-amber-600/30 text-amber-200 border border-amber-500/40 cursor-pointer" data-tab="tab-general">Tema &amp; Warna</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-couple">Profil Mempelai</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-events">Acara &amp; Tanggal</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-gallery">Galeri Foto (File)</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-envelope">DANA &amp; QRIS</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-wishes">Moderasi Buku Tamu</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-security">Ganti Sandi</button>
           
           <div class="mt-auto pt-4 border-t border-stone-800">
             <button id="btnAdminLogout" class="flex items-center gap-2 px-3 py-2 text-stone-400 hover:text-rose-400 text-xs w-full transition cursor-pointer">
-              🚪 Keluar Admin
+              Keluar Admin
             </button>
           </div>
         </div>
@@ -535,33 +565,33 @@
         <!-- Tab Body Content -->
         <div class="flex-1 p-6 overflow-y-auto space-y-6">
           <div id="saveSuccessNotice" class="hidden p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center gap-2">
-            ✓ Perubahan berhasil disimpan dan langsung aktif di web!
+            Perubahan berhasil disimpan dan langsung aktif di web!
           </div>
 
           <!-- TAB: TEMA & WARNA -->
           <div id="tab-general" class="tab-pane space-y-4">
             <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Pilihan Tema Warna Sesuai Permintaan Klien</h4>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800" data-theme="warm-bronze">
+              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800 cursor-pointer" data-theme="warm-bronze">
                 <div class="w-4 h-4 rounded-full bg-amber-700"></div>
                 <span class="text-xs text-stone-200 font-medium">Warm Bronze</span>
               </button>
-              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800" data-theme="romantic-rose">
+              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800 cursor-pointer" data-theme="romantic-rose">
                 <div class="w-4 h-4 rounded-full bg-rose-700"></div>
                 <span class="text-xs text-stone-200 font-medium">Romantic Rose</span>
               </button>
-              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800" data-theme="emerald-gold">
+              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800 cursor-pointer" data-theme="emerald-gold">
                 <div class="w-4 h-4 rounded-full bg-emerald-700"></div>
                 <span class="text-xs text-stone-200 font-medium">Emerald Gold</span>
               </button>
-              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800" data-theme="midnight-navy">
+              <button type="button" class="btn-theme-choice p-3 rounded-xl border text-left flex items-center gap-2.5 bg-stone-950 border-stone-800 cursor-pointer" data-theme="midnight-navy">
                 <div class="w-4 h-4 rounded-full bg-blue-800"></div>
                 <span class="text-xs text-stone-200 font-medium">Midnight Navy</span>
               </button>
             </div>
 
             <div class="p-4 bg-stone-950/60 rounded-2xl border border-stone-800 space-y-2 mt-4">
-              <label class="block text-xs font-bold text-amber-300">Foto Sampul Utama & Watermark Background (File)</label>
+              <label class="block text-xs font-bold text-amber-300">Foto Sampul Utama &amp; Watermark Background (File)</label>
               <input id="editCoverFile" type="file" accept="image/*" class="block w-full text-xs text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-amber-600 file:text-white cursor-pointer" />
             </div>
           </div>
@@ -604,25 +634,71 @@
           </div>
 
           <!-- TAB: ACARA & TANGGAL -->
-          <div id="tab-events" class="tab-pane hidden space-y-4">
-            <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Pengaturan Waktu & Lokasi</h4>
+          <div id="tab-events" class="tab-pane hidden space-y-5">
+            <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Pengaturan Waktu &amp; Lokasi Acara</h4>
             <div>
-              <label class="block text-xs text-stone-300 mb-1">Target Countdown ISO (Contoh: 2026-12-30T08:00:00)</label>
+              <label class="block text-xs font-medium text-stone-300 mb-1">Target Countdown ISO (Contoh: 2026-12-30T08:00:00)</label>
               <input id="editCountdownDate" type="text" class="w-full px-3 py-2 bg-stone-950 border border-stone-800 rounded-lg text-xs text-stone-100 font-mono" />
             </div>
             
-            <div class="p-4 bg-stone-950/60 rounded-2xl border border-stone-800 space-y-2">
-              <h5 class="text-xs font-bold text-amber-300">Akad Nikah</h5>
-              <input id="editAkadDate" type="text" placeholder="Tanggal Akad" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
-              <input id="editAkadTime" type="text" placeholder="Waktu Akad" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
-              <input id="editAkadVenue" type="text" placeholder="Gedung / Tempat" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+            <!-- Akad Nikah Details -->
+            <div class="p-4 bg-stone-950/60 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Akad Nikah</h5>
+                <span class="text-[10px] text-amber-400/80">Bagian 1</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] text-stone-400 mb-1">Tanggal Akad:</label>
+                  <input id="editAkadDate" type="text" placeholder="Contoh: Rabu, 30 Desember 2026" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-stone-400 mb-1">Waktu Akad:</label>
+                  <input id="editAkadTime" type="text" placeholder="Contoh: 08:00 - 10:00 WIB" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Nama Tempat / Gedung / Masjid:</label>
+                <input id="editAkadVenue" type="text" placeholder="Contoh: Masjid Raya Al-Mashun" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Alamat Lengkap Lokasi Akad:</label>
+                <input id="editAkadAddress" type="text" placeholder="Contoh: Jl. Sisingamangaraja No.74c, Medan" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Link Google Maps Akad (URL):</label>
+                <input id="editAkadMapUrl" type="url" placeholder="https://maps.app.goo.gl/..." class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100 font-mono" />
+              </div>
             </div>
 
-            <div class="p-4 bg-stone-950/60 rounded-2xl border border-stone-800 space-y-2">
-              <h5 class="text-xs font-bold text-rose-300">Resepsi Pernikahan</h5>
-              <input id="editResepsiDate" type="text" placeholder="Tanggal Resepsi" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
-              <input id="editResepsiTime" type="text" placeholder="Waktu Resepsi" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
-              <input id="editResepsiVenue" type="text" placeholder="Gedung / Tempat" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+            <!-- Resepsi Pernikahan Details -->
+            <div class="p-4 bg-stone-950/60 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-bold text-rose-300 uppercase tracking-wider">Resepsi Pernikahan</h5>
+                <span class="text-[10px] text-rose-400/80">Bagian 2</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] text-stone-400 mb-1">Tanggal Resepsi:</label>
+                  <input id="editResepsiDate" type="text" placeholder="Contoh: Kamis, 31 Desember 2026" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-stone-400 mb-1">Waktu Resepsi:</label>
+                  <input id="editResepsiTime" type="text" placeholder="Contoh: 11:00 - 14:00 WIB" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Nama Tempat / Gedung / Ballroom:</label>
+                <input id="editResepsiVenue" type="text" placeholder="Contoh: Grand Ballroom / Ramayana Medan" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Alamat Lengkap Lokasi Resepsi:</label>
+                <input id="editResepsiAddress" type="text" placeholder="Contoh: Jl. Sisingamangaraja No.74c, Medan" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">Link Google Maps Resepsi (URL):</label>
+                <input id="editResepsiMapUrl" type="url" placeholder="https://maps.app.goo.gl/..." class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100 font-mono" />
+              </div>
             </div>
           </div>
 
@@ -646,7 +722,7 @@
 
           <!-- TAB: ENVELOPE DANA & QRIS -->
           <div id="tab-envelope" class="tab-pane hidden space-y-4">
-            <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Amplop Digital (DANA & QRIS)</h4>
+            <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Amplop Digital (DANA &amp; QRIS)</h4>
             <div>
               <label class="block text-xs text-stone-300 mb-1">Nomor Akun DANA</label>
               <input id="editDanaNumber" type="text" class="w-full px-3 py-2 bg-stone-950 border border-stone-800 rounded-lg text-xs text-stone-100 font-mono" />
@@ -661,19 +737,24 @@
             </div>
           </div>
 
-          <!-- TAB: MODERASI BUKU TAMU (BISA HAPUS KOMENAN SESUAI REQUEST) -->
+          <!-- TAB: MODERASI BUKU TAMU (HAPUS KOMENTAR) -->
           <div id="tab-wishes" class="tab-pane hidden space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-stone-800">
-              <h4 class="text-base font-semibold text-amber-100">Moderasi & Hapus Komentar Buku Tamu</h4>
-              <button id="btnClearAllWishes" class="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 border border-rose-500/40 text-rose-200 text-xs rounded-lg transition cursor-pointer">
+              <h4 class="text-base font-semibold text-amber-100">Moderasi &amp; Hapus Komentar Buku Tamu</h4>
+              <button id="btnClearAllWishes" type="button" class="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 border border-rose-500/40 text-rose-200 text-xs rounded-lg transition cursor-pointer">
                 Hapus Semua Ucapan
               </button>
             </div>
             <p class="text-xs text-stone-400">
-              Anda dapat menghapus komentar atau ucapan tamu yang tidak pantas dengan 1 klik tombol hapus.
+              Kelola dan hapus ucapan doa tamu. Komentar yang dihapus akan langsung terhapus dari tampilan buku tamu di halaman depan.
             </p>
 
-            <div id="adminWishesList" class="space-y-3 max-h-96 overflow-y-auto">
+            <div id="adminWishNotice" class="hidden p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center justify-between">
+              <span id="adminWishNoticeText">Komentar ucapan berhasil dihapus!</span>
+              <button type="button" id="btnCloseWishNotice" class="text-emerald-400 hover:text-emerald-200 text-xs ml-2 cursor-pointer">Tutup</button>
+            </div>
+
+            <div id="adminWishesList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
               <!-- Rendered via JS -->
             </div>
           </div>
@@ -682,7 +763,7 @@
           <div id="tab-security" class="tab-pane hidden space-y-4 max-w-md">
             <h4 class="text-base font-semibold text-amber-100 pb-2 border-b border-stone-800">Ubah Password Admin</h4>
             <div id="passwordNotice" class="hidden p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl">
-              ✓ Password admin berhasil diubah!
+              Password admin berhasil diubah!
             </div>
             <form id="formChangePassword" class="space-y-3">
               <div>
@@ -701,13 +782,13 @@
       <div id="adminFooterAction" class="hidden p-4 border-t border-stone-800 bg-stone-950 flex items-center justify-between">
         <span class="text-[11px] text-stone-500">Tersimpan otomatis di browser storage (No Coding Needed)</span>
         <button id="btnSaveAllChanges" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs rounded-xl transition shadow-lg cursor-pointer">
-          💾 Simpan Semua Perubahan
+          Simpan Semua Perubahan
         </button>
       </div>
     </div>
   </div>
 
   <!-- Pure Vanilla JavaScript Application Logic -->
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/app.js?v=2.1"></script>
 </body>
 </html>

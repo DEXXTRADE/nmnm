@@ -1,6 +1,7 @@
 /**
  * The Wedding of Arina & Bagas - Pure Vanilla JS Engine
  * Commercial Grade, No-Build GitHub Pages Ready
+ * Developed by DexxDigital
  */
 
 // Default Configuration State
@@ -33,17 +34,17 @@ const DEFAULT_CONFIG = {
     title: 'Akad Nikah',
     date: 'Rabu, 30 Desember 2026',
     time: '08:00 - 10:00 WIB',
-    venue: 'Masjid Raya Al-Jabbar & The Trans Luxury Ballroom',
-    address: 'Jl. Gatot Subroto No.289, Cibangkong, Kota Bandung, Jawa Barat 40273',
-    mapsUrl: 'https://maps.app.goo.gl/aAEqaPAFNVCK1gvaA',
+    venue: 'Masjid Raya Al-Mashun',
+    address: 'Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212',
+    mapsUrl: 'https://maps.app.goo.gl/V64bA13rpYZs6AAw6',
   },
   resepsi: {
     title: 'Resepsi Pernikahan',
     date: 'Kamis, 31 Desember 2026',
     time: '11:00 - 14:00 WIB',
-    venue: 'Grand Ballroom The Trans Luxury Hotel',
-    address: 'Jl. Gatot Subroto No.289, Cibangkong, Kota Bandung, Jawa Barat 40273',
-    mapsUrl: 'https://maps.app.goo.gl/aAEqaPAFNVCK1gvaA',
+    venue: 'Masjid Raya Al-Mashun',
+    address: 'Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212',
+    mapsUrl: 'https://maps.app.goo.gl/V64bA13rpYZs6AAw6',
   },
   countdownDate: '2026-12-30T08:00:00',
   gallery: [
@@ -59,7 +60,7 @@ const DEFAULT_CONFIG = {
   },
   musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-piano-112191.mp3',
   developerContact: {
-    agencyName: 'VowCraft Wedding Tech',
+    agencyName: 'DexxDigital',
     tagline: 'Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif',
     whatsapp: '6281234567890',
   }
@@ -91,7 +92,7 @@ const INITIAL_WISHES = [
   {
     id: 'w4',
     guestName: 'Cecilia & Suami',
-    message: 'Happy wedding day! Maaf kami belum bisa hadir langsung, namun doa tulus kami selalu menyertai kalian berdua ❤️',
+    message: 'Happy wedding day! Maaf kami belum bisa hadir langsung, namun doa tulus kami selalu menyertai kalian berdua.',
     timestamp: 'Kemarin',
     rsvp: 'Tidak Hadir'
   }
@@ -106,21 +107,43 @@ let currentGuestPhotoData = null;
 let adminClickCounter = 0;
 
 function loadConfig() {
-  const saved = localStorage.getItem('vowcraft_wedding_config');
+  const saved = localStorage.getItem('dexxdigital_wedding_config');
   if (saved) {
-    try { return JSON.parse(saved); } catch (e) { return DEFAULT_CONFIG; }
+    try {
+      const parsed = JSON.parse(saved);
+      const cfg = {
+        ...DEFAULT_CONFIG,
+        ...parsed,
+        akad: { ...DEFAULT_CONFIG.akad, ...(parsed.akad || {}) },
+        resepsi: { ...DEFAULT_CONFIG.resepsi, ...(parsed.resepsi || {}) },
+        digitalEnvelope: { ...DEFAULT_CONFIG.digitalEnvelope, ...(parsed.digitalEnvelope || {}) },
+        developerContact: { ...DEFAULT_CONFIG.developerContact, ...(parsed.developerContact || {}) }
+      };
+      // If address or mapsUrl was still the old Bandung mock, migrate to default Medan
+      if (cfg.akad.address && cfg.akad.address.includes('Cibangkong')) {
+        cfg.akad.address = DEFAULT_CONFIG.akad.address;
+        cfg.akad.mapsUrl = DEFAULT_CONFIG.akad.mapsUrl;
+      }
+      if (cfg.resepsi.address && cfg.resepsi.address.includes('Cibangkong')) {
+        cfg.resepsi.address = DEFAULT_CONFIG.resepsi.address;
+        cfg.resepsi.mapsUrl = DEFAULT_CONFIG.resepsi.mapsUrl;
+      }
+      return cfg;
+    } catch (e) {
+      return DEFAULT_CONFIG;
+    }
   }
   return DEFAULT_CONFIG;
 }
 
 function saveConfig(cfg) {
   weddingConfig = cfg;
-  localStorage.setItem('vowcraft_wedding_config', JSON.stringify(cfg));
+  localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(cfg));
   renderAll();
 }
 
 function loadWishes() {
-  const saved = localStorage.getItem('vowcraft_wedding_wishes');
+  const saved = localStorage.getItem('dexxdigital_wedding_wishes');
   if (saved) {
     try { return JSON.parse(saved); } catch (e) { return INITIAL_WISHES; }
   }
@@ -129,7 +152,7 @@ function loadWishes() {
 
 function saveWishes(wishes) {
   weddingWishes = wishes;
-  localStorage.setItem('vowcraft_wedding_wishes', JSON.stringify(wishes));
+  localStorage.setItem('dexxdigital_wedding_wishes', JSON.stringify(wishes));
   renderWishes();
   renderAdminWishes();
 }
@@ -304,7 +327,7 @@ function renderGallery() {
       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
         <div>
           <p class="text-xs font-serif text-amber-200">${item.caption || 'Momen Prewedding'}</p>
-          <span class="text-[10px] text-stone-300 flex items-center gap-1 mt-0.5">🔍 Klik untuk memperbesar</span>
+          <span class="text-[10px] text-stone-300 flex items-center gap-1 mt-0.5">Klik untuk memperbesar</span>
         </div>
       </div>
     `;
@@ -438,7 +461,7 @@ function renderAll() {
   const akDate = document.getElementById('akadDate');
   if (akDate) akDate.innerText = c.akad.date;
   const akTime = document.getElementById('akadTime');
-  if (akTime) akTime.innerText = `⏰ ${c.akad.time}`;
+  if (akTime) akTime.innerText = c.akad.time;
   const akVenue = document.getElementById('akadVenue');
   if (akVenue) akVenue.innerText = c.akad.venue;
   const akAddr = document.getElementById('akadAddress');
@@ -449,7 +472,7 @@ function renderAll() {
   const resDate = document.getElementById('resepsiDate');
   if (resDate) resDate.innerText = c.resepsi.date;
   const resTime = document.getElementById('resepsiTime');
-  if (resTime) resTime.innerText = `⏰ ${c.resepsi.time}`;
+  if (resTime) resTime.innerText = c.resepsi.time;
   const resVenue = document.getElementById('resepsiVenue');
   if (resVenue) resVenue.innerText = c.resepsi.venue;
   const resAddr = document.getElementById('resepsiAddress');
@@ -465,17 +488,17 @@ function renderAll() {
   const qrisPrev = document.getElementById('imgQrisPreview');
   if (qrisPrev) qrisPrev.src = c.digitalEnvelope.qrisImageUrl;
 
-  // Closing & Footer
+  // Closing & Footer - DexxDigital Branding
   const closeNames = document.getElementById('closingCoupleNames');
   if (closeNames) closeNames.innerText = `${c.bride.nickName} & ${c.groom.nickName}`;
   const copyRight = document.getElementById('footerCopyright');
   if (copyRight) copyRight.innerText = `© 2026 ${c.bride.nickName} & ${c.groom.nickName}`;
   const agencyName = document.getElementById('footerAgencyName');
-  if (agencyName) agencyName.innerText = c.developerContact.agencyName;
+  if (agencyName) agencyName.innerText = c.developerContact.agencyName || 'DexxDigital';
   const agencyTag = document.getElementById('footerAgencyTagline');
   if (agencyTag) agencyTag.innerText = c.developerContact.tagline;
   const agencyWa = document.getElementById('footerAgencyWa');
-  if (agencyWa) agencyWa.href = `https://wa.me/${c.developerContact.whatsapp}?text=Halo!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital.`;
+  if (agencyWa) agencyWa.href = `https://wa.me/${c.developerContact.whatsapp}?text=Halo%20DexxDigital!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital.`;
 
   renderGallery();
   renderWishes();
@@ -527,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCopy.addEventListener('click', () => {
       const pureNumber = weddingConfig.digitalEnvelope.danaNumber.replace(/[^0-9]/g, '');
       navigator.clipboard.writeText(pureNumber).then(() => {
-        if (labelCopy) labelCopy.innerText = '✓ Nomor DANA Tersalin!';
+        if (labelCopy) labelCopy.innerText = 'Nomor DANA Tersalin!';
         setTimeout(() => {
           if (labelCopy) labelCopy.innerText = 'Salin No. DANA';
         }, 2000);
@@ -607,11 +630,15 @@ document.addEventListener('DOMContentLoaded', () => {
       weddingWishes.unshift(newWish);
       saveWishes(weddingWishes);
 
-      // Offer WhatsApp forwarding
-      const waText = encodeURIComponent(`Halo ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName}! 🤍\n\nSaya *${gName}* ingin menyampaikan ucapan doa untuk pernikahan kalian:\n\n"${gMsg}"\n\nKonfirmasi Kehadiran: *${currentRsvpChoice}*\n\nTerima kasih atas undangannya!`);
-      const forwardWa = confirm('Ucapan doa Anda telah berhasil tampil di Buku Tamu! Apakah Anda ingin meneruskan ucapan ini ke WhatsApp Pengantin?');
-      if (forwardWa) {
-        window.open(`https://wa.me/?text=${waText}`, '_blank');
+      // Offer WhatsApp forwarding without blocking prompt
+      const waText = encodeURIComponent(`Halo ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName}!\n\nSaya *${gName}* ingin menyampaikan ucapan doa untuk pernikahan kalian:\n\n"${gMsg}"\n\nKonfirmasi Kehadiran: *${currentRsvpChoice}*\n\nTerima kasih atas undangannya!`);
+      const linkWa = document.getElementById('linkSendWishWa');
+      if (linkWa) linkWa.href = `https://wa.me/?text=${waText}`;
+
+      const successNotice = document.getElementById('wishSuccessNotice');
+      if (successNotice) {
+        successNotice.classList.remove('hidden');
+        setTimeout(() => successNotice.classList.add('hidden'), 8000);
       }
 
       msgInput.value = '';
@@ -676,9 +703,8 @@ function setupAdminPanelLogic() {
   const footerAction = document.getElementById('adminFooterAction');
   const errorMsg = document.getElementById('loginErrorMsg');
 
-  // Stored password or default
-  let storedAdminPass = localStorage.getItem('vowcraft_admin_pass') || 'admin123';
-  let storedAdminEmail = localStorage.getItem('vowcraft_admin_email') || 'admin@wedding.com';
+  let storedAdminPass = localStorage.getItem('dexxdigital_admin_pass') || 'admin123';
+  let storedAdminEmail = localStorage.getItem('dexxdigital_admin_email') || 'admin@wedding.com';
 
   if (formLogin) {
     formLogin.addEventListener('submit', (e) => {
@@ -727,6 +753,18 @@ function setupAdminPanelLogic() {
     });
   });
 
+  // Theme choice buttons
+  const themeChoices = document.querySelectorAll('.btn-theme-choice');
+  themeChoices.forEach(tb => {
+    tb.addEventListener('click', () => {
+      const chosen = tb.getAttribute('data-theme');
+      weddingConfig.themeColor = chosen;
+      saveConfig(weddingConfig);
+      themeChoices.forEach(t => t.classList.remove('border-amber-400', 'bg-amber-950/30'));
+      tb.classList.add('border-amber-400', 'bg-amber-950/30');
+    });
+  });
+
   // Change Password Form
   const formPass = document.getElementById('formChangePassword');
   const passNotice = document.getElementById('passwordNotice');
@@ -736,7 +774,7 @@ function setupAdminPanelLogic() {
       const newP = document.getElementById('inputNewAdminPassword')?.value;
       if (newP && newP.length >= 6) {
         storedAdminPass = newP;
-        localStorage.setItem('vowcraft_admin_pass', newP);
+        localStorage.setItem('dexxdigital_admin_pass', newP);
         if (passNotice) {
           passNotice.classList.remove('hidden');
           setTimeout(() => passNotice.classList.add('hidden'), 3000);
@@ -748,7 +786,6 @@ function setupAdminPanelLogic() {
     });
   }
 
-  // File Upload Handlers in Admin
   setupAdminFileUploads();
 
   // Save All Changes Button
@@ -789,20 +826,28 @@ function populateAdminFields() {
 
   // Events
   const countDate = document.getElementById('editCountdownDate');
-  if (countDate) countDate.value = c.countdownDate;
+  if (countDate) countDate.value = c.countdownDate || '';
   const akDate = document.getElementById('editAkadDate');
-  if (akDate) akDate.value = c.akad.date;
+  if (akDate) akDate.value = c.akad.date || '';
   const akTime = document.getElementById('editAkadTime');
-  if (akTime) akTime.value = c.akad.time;
+  if (akTime) akTime.value = c.akad.time || '';
   const akVenue = document.getElementById('editAkadVenue');
-  if (akVenue) akVenue.value = c.akad.venue;
+  if (akVenue) akVenue.value = c.akad.venue || '';
+  const akAddress = document.getElementById('editAkadAddress');
+  if (akAddress) akAddress.value = c.akad.address || '';
+  const akMap = document.getElementById('editAkadMapUrl');
+  if (akMap) akMap.value = c.akad.mapsUrl || '';
 
   const resDate = document.getElementById('editResepsiDate');
-  if (resDate) resDate.value = c.resepsi.date;
+  if (resDate) resDate.value = c.resepsi.date || '';
   const resTime = document.getElementById('editResepsiTime');
-  if (resTime) resTime.value = c.resepsi.time;
+  if (resTime) resTime.value = c.resepsi.time || '';
   const resVenue = document.getElementById('editResepsiVenue');
-  if (resVenue) resVenue.value = c.resepsi.venue;
+  if (resVenue) resVenue.value = c.resepsi.venue || '';
+  const resAddress = document.getElementById('editResepsiAddress');
+  if (resAddress) resAddress.value = c.resepsi.address || '';
+  const resMap = document.getElementById('editResepsiMapUrl');
+  if (resMap) resMap.value = c.resepsi.mapsUrl || '';
 
   // Envelope
   const danaNum = document.getElementById('editDanaNumber');
@@ -836,6 +881,10 @@ function collectAdminFieldsAndSave() {
   if (akTime) c.akad.time = akTime;
   const akVenue = document.getElementById('editAkadVenue')?.value;
   if (akVenue) c.akad.venue = akVenue;
+  const akAddress = document.getElementById('editAkadAddress')?.value;
+  if (akAddress !== undefined) c.akad.address = akAddress;
+  const akMap = document.getElementById('editAkadMapUrl')?.value;
+  if (akMap !== undefined) c.akad.mapsUrl = akMap;
 
   const resDate = document.getElementById('editResepsiDate')?.value;
   if (resDate) c.resepsi.date = resDate;
@@ -843,6 +892,10 @@ function collectAdminFieldsAndSave() {
   if (resTime) c.resepsi.time = resTime;
   const resVenue = document.getElementById('editResepsiVenue')?.value;
   if (resVenue) c.resepsi.venue = resVenue;
+  const resAddress = document.getElementById('editResepsiAddress')?.value;
+  if (resAddress !== undefined) c.resepsi.address = resAddress;
+  const resMap = document.getElementById('editResepsiMapUrl')?.value;
+  if (resMap !== undefined) c.resepsi.mapsUrl = resMap;
 
   const danaNum = document.getElementById('editDanaNumber')?.value;
   if (danaNum) c.digitalEnvelope.danaNumber = danaNum;
@@ -932,11 +985,48 @@ function setupAdminFileUploads() {
   // Clear All Wishes
   const btnClearAll = document.getElementById('btnClearAllWishes');
   if (btnClearAll) {
-    btnClearAll.addEventListener('click', () => {
-      if (confirm('Apakah Anda yakin ingin menghapus SELURUH komentar tamu?')) {
+    btnClearAll.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!weddingWishes || weddingWishes.length === 0) {
+        showWishNotification('Buku tamu sudah kosong.');
+        return;
+      }
+      if (btnClearAll.getAttribute('data-confirm') === 'true') {
         saveWishes([]);
+        showWishNotification('Seluruh riwayat komentar ucapan tamu telah dibersihkan.');
+        btnClearAll.innerText = 'Hapus Semua Ucapan';
+        btnClearAll.removeAttribute('data-confirm');
+        btnClearAll.classList.remove('bg-rose-600', 'text-white');
+      } else {
+        btnClearAll.innerText = 'Yakin? Klik Lagi untuk Hapus Semua';
+        btnClearAll.setAttribute('data-confirm', 'true');
+        btnClearAll.classList.add('bg-rose-600', 'text-white');
+        setTimeout(() => {
+          btnClearAll.innerText = 'Hapus Semua Ucapan';
+          btnClearAll.removeAttribute('data-confirm');
+          btnClearAll.classList.remove('bg-rose-600', 'text-white');
+        }, 4000);
       }
     });
+  }
+
+  const btnCloseNotice = document.getElementById('btnCloseWishNotice');
+  if (btnCloseNotice) {
+    btnCloseNotice.addEventListener('click', () => {
+      document.getElementById('adminWishNotice')?.classList.add('hidden');
+    });
+  }
+}
+
+function showWishNotification(text) {
+  const notice = document.getElementById('adminWishNotice');
+  const noticeText = document.getElementById('adminWishNoticeText');
+  if (notice && noticeText) {
+    noticeText.innerText = text;
+    notice.classList.remove('hidden');
+    setTimeout(() => {
+      notice.classList.add('hidden');
+    }, 3500);
   }
 }
 
@@ -991,54 +1081,55 @@ function renderAdminGalleryList() {
   cont.querySelectorAll('.btn-del-gal').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.getAttribute('data-index'));
-      if (confirm('Hapus foto ini dari galeri?')) {
-        weddingConfig.gallery.splice(idx, 1);
-        saveConfig(weddingConfig);
-        renderAdminGalleryList();
-      }
+      weddingConfig.gallery.splice(idx, 1);
+      saveConfig(weddingConfig);
+      renderAdminGalleryList();
     });
   });
 }
 
-// Admin Wishes Moderation List (FITUR HAPUS KOMENAN)
+// Admin Wishes Moderation List (HAPUS KOMENAN)
 function renderAdminWishes() {
   const cont = document.getElementById('adminWishesList');
   if (!cont) return;
   cont.innerHTML = '';
 
-  if (weddingWishes.length === 0) {
-    cont.innerHTML = '<div class="p-4 text-center text-xs text-stone-500">Belum ada komentar ucapan tamu.</div>';
+  if (!weddingWishes || weddingWishes.length === 0) {
+    cont.innerHTML = '<div class="p-6 text-center text-xs text-stone-500 bg-stone-950 rounded-xl border border-stone-800">Belum ada komentar ucapan tamu atau seluruh komentar telah dihapus.</div>';
     return;
   }
 
-  weddingWishes.forEach((w, index) => {
+  weddingWishes.forEach((w) => {
     const item = document.createElement('div');
-    item.className = 'p-3 bg-stone-950 border border-stone-800 rounded-xl flex items-start justify-between gap-3';
+    item.className = 'p-3 bg-stone-950 border border-stone-800 rounded-xl flex items-start justify-between gap-3 transition hover:border-stone-700';
     item.innerHTML = `
-      <div class="flex-1">
-        <div class="flex items-center gap-2">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
           <strong class="text-xs text-amber-200">${escapeHtml(w.guestName)}</strong>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-300">${w.rsvp}</span>
-          <span class="text-[10px] text-stone-500">${w.timestamp}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-300">${w.rsvp || 'Hadir'}</span>
+          <span class="text-[10px] text-stone-500">${w.timestamp || ''}</span>
         </div>
-        <p class="text-xs text-stone-300 mt-1">${escapeHtml(w.message)}</p>
+        <p class="text-xs text-stone-300 mt-1 leading-relaxed break-words">${escapeHtml(w.message)}</p>
         ${w.photoUrl ? `<div class="mt-2"><img src="${w.photoUrl}" class="w-12 h-12 object-cover rounded border border-stone-700" /></div>` : ''}
       </div>
-      <button type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-500/30 text-rose-200 text-xs transition cursor-pointer btn-delete-wish" data-id="${w.id}">
-        🗑️ Hapus
+      <button type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-500/40 text-rose-200 text-xs transition cursor-pointer shrink-0 btn-delete-wish" data-id="${w.id}">
+        Hapus
       </button>
     `;
     cont.appendChild(item);
   });
 
-  // Bind delete wish handlers
   cont.querySelectorAll('.btn-delete-wish').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const wishId = btn.getAttribute('data-id');
-      if (confirm('Hapus komentar ucapan ini dari buku tamu?')) {
-        const filtered = weddingWishes.filter(item => item.id !== wishId);
-        saveWishes(filtered);
-      }
+      const targetWish = weddingWishes.find(item => String(item.id) === String(wishId));
+      const guestName = targetWish ? targetWish.guestName : 'Tamu';
+
+      weddingWishes = weddingWishes.filter(item => String(item.id) !== String(wishId));
+      saveWishes(weddingWishes);
+      showWishNotification(`Komentar doa dari "${guestName}" telah berhasil dihapus.`);
     });
   });
 }
