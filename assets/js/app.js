@@ -98,6 +98,42 @@ const INITIAL_WISHES = [
   }
 ];
 
+// Firebase Client Configuration (User Provided Cloud Project: web-wedding-4d4ce)
+const firebaseConfig = {
+  apiKey: "AIzaSyDmLSvUrOw0U_aLNkctFMKKo5AavJCHYc4",
+  authDomain: "web-wedding-4d4ce.firebaseapp.com",
+  projectId: "web-wedding-4d4ce",
+  storageBucket: "web-wedding-4d4ce.firebasestorage.app",
+  messagingSenderId: "904409888717",
+  appId: "1:904409888717:web:5d92101d2ce28ddc067684",
+  measurementId: "G-F71CLB6L66"
+};
+
+// Initialize Firebase SDK
+let firebaseApp = null;
+let firestoreDb = null;
+let firebaseAnalytics = null;
+let isFirebaseConnected = false;
+let unsubscribeFirebaseConfig = null;
+let unsubscribeFirebaseWishes = null;
+
+try {
+  if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+    if (!firebase.apps || !firebase.apps.length) {
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+    } else {
+      firebaseApp = firebase.app();
+    }
+    firestoreDb = firebase.firestore();
+    if (typeof firebase.analytics === 'function') {
+      try { firebaseAnalytics = firebase.analytics(); } catch (e) {}
+    }
+    console.log('[DexxDigital] Firebase initialized for project:', firebaseConfig.projectId);
+  }
+} catch (err) {
+  console.warn('[DexxDigital] Firebase init notice:', err);
+}
+
 // App State
 let weddingConfig = loadConfig();
 let weddingWishes = loadWishes();
@@ -105,6 +141,28 @@ let isMusicPlaying = false;
 let currentRsvpChoice = 'Hadir';
 let currentGuestPhotoData = null;
 let adminClickCounter = 0;
+
+function updateFirebaseUIStatus(active, msg) {
+  isFirebaseConnected = active;
+  const dot = document.getElementById('firebaseStatusDot');
+  const txt = document.getElementById('firebaseStatusText');
+  const box = document.getElementById('firebaseNoticeBox');
+
+  if (dot) {
+    dot.className = active ? 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse' : 'w-3 h-3 rounded-full bg-amber-500';
+  }
+  if (txt) {
+    txt.className = active ? 'text-xs font-bold text-emerald-400 uppercase tracking-wider' : 'text-xs font-bold text-amber-400 uppercase tracking-wider';
+    txt.innerText = active ? 'Firebase Firestore Aktif & Terhubung' : 'Firebase Menunggu Konfigurasi Rules';
+  }
+  if (box && msg) {
+    box.className = active
+      ? 'p-3 rounded-xl text-xs bg-emerald-950/80 border border-emerald-500/40 text-emerald-200'
+      : 'p-3 rounded-xl text-xs bg-amber-950/80 border border-amber-500/40 text-amber-200';
+    box.innerText = msg;
+    box.classList.remove('hidden');
+  }
+}
 
 function mergeWithDefaults(data) {
   const base = (typeof window !== 'undefined' && window.WEDDING_CONFIG && typeof window.WEDDING_CONFIG === 'object')
@@ -114,6 +172,8 @@ function mergeWithDefaults(data) {
   return {
     ...base,
     ...data,
+    bride: { ...base.bride, ...(data?.bride || {}) },
+    groom: { ...base.groom, ...(data?.groom || {}) },
     akad: { ...base.akad, ...(data?.akad || {}) },
     resepsi: { ...base.resepsi, ...(data?.resepsi || {}) },
     digitalEnvelope: { ...base.digitalEnvelope, ...(data?.digitalEnvelope || {}) },
@@ -140,7 +200,22 @@ async function saveConfig(cfg) {
   localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(cfg));
   renderAll();
 
-  // Multi-device cloud sync: push to backend server
+  // 1. Multi-device cloud sync via Firebase Firestore
+  if (firestoreDb) {
+    try {
+      await firestoreDb.collection('wedding_data').doc('config').set(cfg);
+      updateFirebaseUIStatus(true, 'Data berhasil disimpan & langsung sinkron ke seluruh perangkat via Firestore!');
+    } catch (e) {
+      console.warn('[DexxDigital] Firestore save notice:', e);
+      if (e.code === 'permission-denied') {
+        updateFirebaseUIStatus(false, 'Aturan Firestore diblokir. Harap buka aturan Rules di Firebase Console: allow read, write: if true;');
+      } else {
+        updateFirebaseUIStatus(false, 'Gagal menyimpan ke Firestore: ' + (e.message || 'Error'));
+      }
+    }
+  }
+
+  // 2. Multi-device cloud sync via backend server (Dev/Node runtime)
   try {
     await fetch('/api/config', {
       method: 'POST',
@@ -148,12 +223,92 @@ async function saveConfig(cfg) {
       body: JSON.stringify(cfg)
     });
   } catch (e) {
-    console.log('[DexxDigital] Static fallback: config saved locally');
+    console.log('[DexxDigital] Local/static fallback: config saved locally');
   }
 }
 
+async function initFirebaseSync() {
+  if (!firestoreDb) return;
+
+  // 1. Real-time listener for Wedding Configuration
+  try {
+    const configDocRef = firestoreDb.collection('wedding_data').doc('config');
+    unsubscribeFirebaseConfig = configDocRef.onSnapshot(async (docSnapshot) => {
+      if (docSnapshot.exists) {
+        const cloudData = docSnapshot.data();
+        if (cloudData && typeof cloudData === 'object') {
+          weddingConfig = mergeWithDefaults(cloudData);
+          localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(weddingConfig));
+          renderAll();
+          populateAdminFields();
+          updateFirebaseUIStatus(true, 'Sinkronisasi Real-Time Aktif (web-wedding-4d4ce)');
+        }
+      } else {
+        // First run auto-seed to Firestore
+        try {
+          await configDocRef.set(weddingConfig);
+          updateFirebaseUIStatus(true, 'Data pernikahan berhasil diunggah awal ke Firestore.');
+        } catch (seedErr) {
+          console.warn('[DexxDigital] Auto-seed Firestore notice:', seedErr);
+        }
+      }
+    }, (error) => {
+      console.warn('[DexxDigital] Firestore config listener:', error.message);
+      if (error.code === 'permission-denied') {
+        updateFirebaseUIStatus(false, 'Aturan Firestore ditolak. Buka Firebase Console -> Rules dan atur: allow read, write: if true;');
+      }
+    });
+  } catch (err) {
+    console.warn('[DexxDigital] Firestore config listener setup error:', err);
+  }
+
+  // 2. Real-time listener for Guestbook Wishes & Photos
+  try {
+    const wishesCollRef = firestoreDb.collection('wedding_wishes').orderBy('createdAt', 'desc');
+    unsubscribeFirebaseWishes = wishesCollRef.onSnapshot((querySnapshot) => {
+      if (!querySnapshot.empty) {
+        const cloudWishes = [];
+        querySnapshot.forEach((doc) => {
+          const d = doc.data();
+          cloudWishes.push({
+            id: doc.id,
+            guestName: d.guestName || 'Tamu',
+            message: d.message || '',
+            timestamp: d.timestamp || 'Baru saja',
+            rsvp: d.rsvp || 'Hadir',
+            photoUrl: d.photoUrl || undefined
+          });
+        });
+        weddingWishes = cloudWishes;
+        localStorage.setItem('dexxdigital_wedding_wishes', JSON.stringify(weddingWishes));
+        renderWishes();
+        renderAdminWishes();
+      }
+    }, (error) => {
+      console.warn('[DexxDigital] Firestore wishes listener:', error.message);
+    });
+  } catch (err) {
+    console.warn('[DexxDigital] Firestore wishes listener setup error:', err);
+  }
+
+  // 3. Real-time sync for Admin Security Password
+  try {
+    firestoreDb.collection('wedding_data').doc('admin_security').onSnapshot((doc) => {
+      if (doc.exists) {
+        const sec = doc.data();
+        if (sec.password) {
+          localStorage.setItem('dexxdigital_admin_pass', sec.password);
+        }
+        if (sec.email) {
+          localStorage.setItem('dexxdigital_admin_email', sec.email);
+        }
+      }
+    }, () => {});
+  } catch (e) {}
+}
+
 async function syncFromServer() {
-  // 1. Sync Wedding Config across devices
+  // Sync from server API as resilient backup
   try {
     const res = await fetch('/api/config');
     if (res.ok) {
@@ -165,11 +320,8 @@ async function syncFromServer() {
         populateAdminFields();
       }
     }
-  } catch (e) {
-    // Static mode / offline
-  }
+  } catch (e) {}
 
-  // 2. Sync Wishes Live Stream across devices
   try {
     const resWishes = await fetch('/api/wishes');
     if (resWishes.ok) {
@@ -181,9 +333,7 @@ async function syncFromServer() {
         renderAdminWishes();
       }
     }
-  } catch (e) {
-    // Static mode / offline
-  }
+  } catch (e) {}
 }
 
 function loadWishes() {
@@ -675,7 +825,27 @@ document.addEventListener('DOMContentLoaded', () => {
       weddingWishes.unshift(newWish);
       saveWishes(weddingWishes);
 
-      // Multi-device sync: push new wish to server
+      // 1. Save to Firebase Firestore (Real-time sync to all devices)
+      if (firestoreDb) {
+        try {
+          firestoreDb.collection('wedding_wishes').add({
+            guestName: gName,
+            message: gMsg,
+            rsvp: currentRsvpChoice,
+            photoUrl: currentGuestPhotoData || null,
+            timestamp: 'Baru saja',
+            createdAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
+              ? firebase.firestore.FieldValue.serverTimestamp()
+              : new Date()
+          }).catch(err => {
+            console.warn('[DexxDigital] Firestore wish add error:', err);
+          });
+        } catch (fsErr) {
+          console.warn('[DexxDigital] Firestore wish error:', fsErr);
+        }
+      }
+
+      // 2. Multi-device sync: push new wish to server
       try {
         fetch('/api/wishes', {
           method: 'POST',
@@ -710,8 +880,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 2. URL parameter ?admin=1
-  if (new URLSearchParams(window.location.search).get('admin') === '1') {
+  // 2. URL parameter ?admin=1 atau hash #admin
+  if (new URLSearchParams(window.location.search).get('admin') === '1' || window.location.hash === '#admin') {
     openAdminPanel();
   }
 
@@ -727,6 +897,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 4. Subtle Discreet Trigger Button di Footer (Hidden in Plain Sight)
+  const btnSecretAdmin = document.getElementById('btnSecretAdmin');
+  if (btnSecretAdmin) {
+    btnSecretAdmin.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAdminPanel();
+    });
+  }
+
+  // Mulai sinkronisasi Firebase Firestore & server
+  initFirebaseSync();
   setupAdminPanelLogic();
 });
 
@@ -829,6 +1010,20 @@ function setupAdminPanelLogic() {
       if (newP && newP.length >= 6) {
         storedAdminPass = newP;
         localStorage.setItem('dexxdigital_admin_pass', newP);
+
+        // Sync password to Firestore
+        if (firestoreDb) {
+          try {
+            firestoreDb.collection('wedding_data').doc('admin_security').set({
+              password: newP,
+              email: storedAdminEmail || 'admin@wedding.com',
+              updatedAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
+                ? firebase.firestore.FieldValue.serverTimestamp()
+                : new Date()
+            }).catch(err => console.warn('Firestore password sync notice:', err));
+          } catch (e) {}
+        }
+
         if (passNotice) {
           passNotice.classList.remove('hidden');
           setTimeout(() => passNotice.classList.add('hidden'), 3000);
@@ -1048,6 +1243,18 @@ function setupAdminFileUploads() {
       if (btnClearAll.getAttribute('data-confirm') === 'true') {
         saveWishes([]);
         showWishNotification('Seluruh riwayat komentar ucapan tamu telah dibersihkan.');
+
+        // Delete all wishes from Firebase Firestore
+        if (firestoreDb) {
+          try {
+            firestoreDb.collection('wedding_wishes').get().then((snapshot) => {
+              const batch = firestoreDb.batch();
+              snapshot.docs.forEach((d) => batch.delete(d.ref));
+              return batch.commit();
+            }).catch(err => console.warn('Firestore clear error:', err));
+          } catch (e) {}
+        }
+
         try {
           fetch('/api/wishes', { method: 'DELETE' }).catch(() => {});
         } catch (e) {}
@@ -1071,6 +1278,77 @@ function setupAdminFileUploads() {
   if (btnCloseNotice) {
     btnCloseNotice.addEventListener('click', () => {
       document.getElementById('adminWishNotice')?.classList.add('hidden');
+    });
+  }
+
+  // Firebase Database Tab Handlers
+  const btnTestFb = document.getElementById('btnTestFirebaseSync');
+  if (btnTestFb) {
+    btnTestFb.addEventListener('click', async () => {
+      btnTestFb.disabled = true;
+      btnTestFb.innerText = 'Menguji koneksi Firestore...';
+      if (!firestoreDb) {
+        updateFirebaseUIStatus(false, 'SDK Firebase belum terinisialisasi. Periksa koneksi internet atau script CDN.');
+        btnTestFb.disabled = false;
+        btnTestFb.innerText = 'Uji Koneksi & Sinkronkan Sekarang';
+        return;
+      }
+      try {
+        // Test write & read probe doc
+        await firestoreDb.collection('wedding_data').doc('probe_test').set({
+          status: 'connected',
+          timestamp: new Date().toISOString(),
+          developer: 'DexxDigital'
+        });
+        // Push config to Firestore
+        await firestoreDb.collection('wedding_data').doc('config').set(weddingConfig);
+        updateFirebaseUIStatus(true, 'Koneksi Firestore BERHASIL! Database cloud aktif & tersinkronisasi 100%.');
+      } catch (err) {
+        console.warn('Firebase test connection error:', err);
+        if (err.code === 'permission-denied') {
+          updateFirebaseUIStatus(false, 'Aturan Firestore diblokir (Permission Denied). Salin kode aturan di bawah dan tempelkan ke Firebase Console -> Rules!');
+        } else {
+          updateFirebaseUIStatus(false, 'Status Firebase: ' + (err.message || 'Error koneksi'));
+        }
+      } finally {
+        btnTestFb.disabled = false;
+        btnTestFb.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Uji Koneksi &amp; Sinkronkan Sekarang</span>`;
+      }
+    });
+  }
+
+  const btnSeedFb = document.getElementById('btnSeedFirebaseData');
+  if (btnSeedFb) {
+    btnSeedFb.addEventListener('click', async () => {
+      if (!firestoreDb) {
+        alert('Firebase belum terhubung');
+        return;
+      }
+      btnSeedFb.disabled = true;
+      btnSeedFb.innerText = 'Mengunggah ke Firestore...';
+      try {
+        await firestoreDb.collection('wedding_data').doc('config').set(weddingConfig);
+        updateFirebaseUIStatus(true, 'Data pernikahan saat ini berhasil diunggah ke Firebase Firestore.');
+      } catch (err) {
+        updateFirebaseUIStatus(false, 'Gagal mengunggah ke Firestore: ' + err.message);
+      } finally {
+        btnSeedFb.disabled = false;
+        btnSeedFb.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg><span>Unggah Data Saat Ini ke Firestore</span>`;
+      }
+    });
+  }
+
+  const btnCopyRules = document.getElementById('btnCopyFirebaseRules');
+  if (btnCopyRules) {
+    btnCopyRules.addEventListener('click', () => {
+      const code = document.getElementById('codeFirebaseRules')?.innerText || `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`;
+      copyToClipboard(code, () => {
+        const notice = document.getElementById('rulesCopyNotice');
+        if (notice) {
+          notice.classList.remove('hidden');
+          setTimeout(() => notice.classList.add('hidden'), 3500);
+        }
+      });
     });
   }
 
@@ -1108,6 +1386,35 @@ function setupAdminFileUploads() {
   }
 }
 
+function copyToClipboard(text, onSuccess) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (onSuccess) onSuccess();
+    }).catch(() => {
+      fallbackCopy(text, onSuccess);
+    });
+  } else {
+    fallbackCopy(text, onSuccess);
+  }
+}
+
+function fallbackCopy(text, onSuccess) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    if (onSuccess) onSuccess();
+  } catch (e) {}
+  document.body.removeChild(ta);
+}
+
 function downloadConfigJs() {
   const code = `/**\n * The Wedding of ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName} - Master Configuration File\n * Commercial Grade - Developed by DexxDigital\n * Auto-generated from Admin Panel - Ready for GitHub Pages\n */\n\nwindow.WEDDING_CONFIG = ${JSON.stringify(weddingConfig, null, 2)};\n`;
   const blob = new Blob([code], { type: 'application/javascript;charset=utf-8' });
@@ -1123,7 +1430,7 @@ function downloadConfigJs() {
 
 function copyConfigCode() {
   const code = `/**\n * The Wedding of ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName} - Master Configuration File\n * Commercial Grade - Developed by DexxDigital\n * Auto-generated from Admin Panel - Ready for GitHub Pages\n */\n\nwindow.WEDDING_CONFIG = ${JSON.stringify(weddingConfig, null, 2)};\n`;
-  navigator.clipboard.writeText(code).then(() => {
+  copyToClipboard(code, () => {
     const notice = document.getElementById('copyConfigNotice');
     if (notice) {
       notice.classList.remove('hidden');
@@ -1244,6 +1551,15 @@ function renderAdminWishes() {
       weddingWishes = weddingWishes.filter(item => String(item.id) !== String(wishId));
       saveWishes(weddingWishes);
       showWishNotification(`Komentar doa dari "${guestName}" telah berhasil dihapus.`);
+
+      // Multi-device sync: delete on Firebase Firestore
+      if (firestoreDb) {
+        try {
+          firestoreDb.collection('wedding_wishes').doc(String(wishId)).delete().catch(err => {
+            console.warn('[DexxDigital] Firestore wish delete error:', err);
+          });
+        } catch (e) {}
+      }
 
       // Multi-device sync: delete on server
       try {

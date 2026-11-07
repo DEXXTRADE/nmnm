@@ -11,6 +11,10 @@
   
   <!-- Tailwind CSS CDN for zero-build standalone HTML architecture -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK Compat CDN (Vanilla JS, Zero Build, Standalone GitHub Pages Ready) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -461,6 +465,10 @@
         <span id="footerCopyright" class="cursor-pointer select-none" title="Klik 5x untuk akses pengembang">© 2026 Arina &amp; Bagas</span>
         <span>·</span>
         <span>All Rights Reserved</span>
+        <!-- Subtle Discreet Admin Trigger (Hidden in Plain Sight for Owner) -->
+        <button id="btnSecretAdmin" type="button" aria-label="Akses Admin" class="opacity-20 hover:opacity-100 transition p-1 text-stone-500 hover:text-amber-400 cursor-pointer rounded-full ml-1" title="Akses Admin DexxDigital">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </button>
       </div>
 
       <!-- Developer Watermark: DexxDigital -->
@@ -553,6 +561,10 @@
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-gallery">Galeri Foto (File)</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-envelope">DANA &amp; QRIS</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-wishes">Moderasi Buku Tamu</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-firebase">
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+            <span>Database Firebase</span>
+          </button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-security">Ganti Sandi</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-sync">Sinkron &amp; Deploy GitHub</button>
           
@@ -775,6 +787,91 @@
                 Simpan Password Baru
               </button>
             </form>
+          </div>
+
+          <!-- TAB: DATABASE FIREBASE FIRESTORE (MULTI-DEVICE REAL-TIME CLOUD) -->
+          <div id="tab-firebase" class="tab-pane hidden space-y-5">
+            <div class="pb-2 border-b border-stone-800">
+              <h4 class="text-base font-semibold text-amber-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                <span>Database Firebase Firestore (Real-Time Cloud)</span>
+              </h4>
+              <p class="text-xs text-stone-400 mt-1">
+                Data disimpan langsung di database cloud Firebase Anda sehingga otomatis sinkron ke HP, iPad, laptop, dan semua tamu tanpa reset!
+              </p>
+            </div>
+
+            <!-- Firebase Connection Card -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span id="firebaseStatusDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span id="firebaseStatusText" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                    Firebase Firestore Aktif
+                  </span>
+                </div>
+                <span class="text-[11px] text-stone-400 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">web-wedding-4d4ce</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-stone-300">
+                <div class="p-2.5 bg-stone-900/50 rounded-xl border border-stone-800/80">
+                  <span class="text-[10px] text-stone-400 block mb-0.5">Project ID:</span>
+                  <strong class="text-amber-200 font-mono">web-wedding-4d4ce</strong>
+                </div>
+                <div class="p-2.5 bg-stone-900/50 rounded-xl border border-stone-800/80">
+                  <span class="text-[10px] text-stone-400 block mb-0.5">Koleksi Firestore:</span>
+                  <strong class="text-amber-200 font-mono">wedding_data / wedding_wishes</strong>
+                </div>
+              </div>
+
+              <div id="firebaseNoticeBox" class="hidden p-3 rounded-xl text-xs">
+                <!-- Status notice text -->
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <button id="btnTestFirebaseSync" type="button" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs rounded-xl transition shadow cursor-pointer flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  <span>Uji Koneksi &amp; Sinkronkan Sekarang</span>
+                </button>
+                <button id="btnSeedFirebaseData" type="button" class="px-3.5 py-2 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-200 font-medium text-xs rounded-xl transition cursor-pointer flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                  <span>Unggah Data Saat Ini ke Firestore</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Firebase Rules Helper Box -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Panduan Aturan Keamanan (Firestore Rules)</h5>
+                <a href="https://console.firebase.google.com/project/web-wedding-4d4ce/firestore/rules" target="_blank" rel="noreferrer" class="text-[11px] text-amber-400 hover:underline flex items-center gap-1">
+                  <span>Buka Firebase Console</span>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+              </div>
+              <p class="text-xs text-stone-300 leading-relaxed">
+                Agar data undangan dan buku tamu dapat dibaca dan ditulis oleh tamu di HP/laptop mana saja, pastikan aturan di tab <strong>Rules</strong> Firestore sudah diatur ke <code>allow read, write: if true;</code>:
+              </p>
+
+              <div class="relative bg-stone-900 p-3 rounded-xl border border-stone-800 text-[11px] font-mono text-amber-200 overflow-x-auto">
+                <pre id="codeFirebaseRules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button id="btnCopyFirebaseRules" type="button" class="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  <span>Salin Kode Aturan Rules</span>
+                </button>
+                <span id="rulesCopyNotice" class="hidden text-xs text-emerald-400">Aturan berhasil disalin!</span>
+              </div>
+            </div>
           </div>
 
           <!-- TAB: SINKRONISASI MULTI-DEVICE & DEPLOY GITHUB PAGES -->
