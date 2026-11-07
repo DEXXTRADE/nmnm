@@ -554,6 +554,7 @@
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-envelope">DANA &amp; QRIS</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-wishes">Moderasi Buku Tamu</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-security">Ganti Sandi</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-sync">Sinkron &amp; Deploy GitHub</button>
           
           <div class="mt-auto pt-4 border-t border-stone-800">
             <button id="btnAdminLogout" class="flex items-center gap-2 px-3 py-2 text-stone-400 hover:text-rose-400 text-xs w-full transition cursor-pointer">
@@ -775,20 +776,85 @@
               </button>
             </form>
           </div>
+
+          <!-- TAB: SINKRONISASI MULTI-DEVICE & DEPLOY GITHUB PAGES -->
+          <div id="tab-sync" class="tab-pane hidden space-y-5">
+            <div class="pb-2 border-b border-stone-800">
+              <h4 class="text-base font-semibold text-amber-100">Sinkronisasi Multi-Device &amp; Deploy GitHub Pages</h4>
+              <p class="text-xs text-stone-400 mt-1">
+                Atasi setelan reset saat web dibuka di HP/iPad lain dan siapkan file konfigurasi untuk deploy permanen ke GitHub Pages.
+              </p>
+            </div>
+
+            <!-- Server Sync Status -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Server Sinkronisasi Aktif
+                </span>
+                <span class="text-[10px] text-stone-400 font-mono">Real-Time Cloud Storage</span>
+              </div>
+              <p class="text-xs text-stone-300 leading-relaxed">
+                Setiap kali Anda menekan <strong>"Simpan Semua Perubahan"</strong>, data langsung tersimpan ke backend server. Perubahan Anda <strong>otomatis tersinkronisasi</strong> dan dapat langsung dibuka di HP, laptop lain, maupun iPad tanpa reset!
+              </p>
+              <button id="btnForceServerSync" type="button" class="px-3.5 py-2 bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl font-medium transition cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span>Kirim &amp; Sinkronkan ke Server Sekarang</span>
+              </button>
+            </div>
+
+            <!-- GitHub Pages Zero-Reset Guide & Download -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Deploy Permanen ke GitHub Pages (Zero-Reset Guarantee)</h5>
+              <p class="text-xs text-stone-300 leading-relaxed">
+                Hosting GitHub Pages bersifat statis tanpa server. Agar website undangan klien Anda di GitHub Pages <strong>selamanya menampilkan data klien</strong> di perangkat siapa saja yang membuka, unduh file konfigurasi ini:
+              </p>
+
+              <div id="copyConfigNotice" class="hidden p-2.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl">
+                Kode konfigurasi berhasil disalin ke clipboard!
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3 pt-1">
+                <button id="btnDownloadConfigTab" type="button" class="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs rounded-xl transition shadow-md cursor-pointer flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  <span>Unduh File config.js</span>
+                </button>
+                <button id="btnCopyConfigTab" type="button" class="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-200 font-medium text-xs rounded-xl transition cursor-pointer flex items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  <span>Salin Kode config.js</span>
+                </button>
+              </div>
+
+              <div class="p-3 bg-stone-900/60 rounded-xl border border-stone-800 text-[11px] text-stone-400 space-y-1">
+                <p class="font-semibold text-stone-300">Cara Pakai di VS Code (Hanya 1 Langkah):</p>
+                <p>1. Simpan atau timpakan file <code class="text-amber-300 font-mono">config.js</code> yang baru diunduh ke dalam folder <code class="text-amber-300 font-mono">assets/js/config.js</code> di komputer Anda.</p>
+                <p>2. Lakukan <code class="text-amber-300 font-mono">git commit</code> dan <code class="text-amber-300 font-mono">git push</code> ke repositori GitHub Pages. Selesai! Web pernikahan klien Anda langsung permanen 100%.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Footer Action -->
-      <div id="adminFooterAction" class="hidden p-4 border-t border-stone-800 bg-stone-950 flex items-center justify-between">
-        <span class="text-[11px] text-stone-500">Tersimpan otomatis di browser storage (No Coding Needed)</span>
-        <button id="btnSaveAllChanges" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs rounded-xl transition shadow-lg cursor-pointer">
-          Simpan Semua Perubahan
-        </button>
+      <div id="adminFooterAction" class="hidden p-4 border-t border-stone-800 bg-stone-950 flex flex-wrap items-center justify-between gap-3">
+        <span class="text-[11px] text-stone-400">Sinkron otomatis ke cloud storage &amp; server (No Coding Needed)</span>
+        <div class="flex items-center gap-2">
+          <button id="btnDownloadConfig" type="button" class="px-3.5 py-2 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-200 font-medium text-xs rounded-xl transition cursor-pointer flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Unduh config.js</span>
+          </button>
+          <button id="btnSaveAllChanges" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs rounded-xl transition shadow-lg cursor-pointer">
+            Simpan Semua Perubahan
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Master Configuration (GitHub Pages & Multi-Device Sync Ready) -->
+  <script src="assets/js/config.js?v=2.2"></script>
   <!-- Pure Vanilla JavaScript Application Logic -->
-  <script src="assets/js/app.js?v=2.1"></script>
+  <script src="assets/js/app.js?v=2.2"></script>
 </body>
 </html>

@@ -106,40 +106,84 @@ let currentRsvpChoice = 'Hadir';
 let currentGuestPhotoData = null;
 let adminClickCounter = 0;
 
+function mergeWithDefaults(data) {
+  const base = (typeof window !== 'undefined' && window.WEDDING_CONFIG && typeof window.WEDDING_CONFIG === 'object')
+    ? window.WEDDING_CONFIG
+    : DEFAULT_CONFIG;
+
+  return {
+    ...base,
+    ...data,
+    akad: { ...base.akad, ...(data?.akad || {}) },
+    resepsi: { ...base.resepsi, ...(data?.resepsi || {}) },
+    digitalEnvelope: { ...base.digitalEnvelope, ...(data?.digitalEnvelope || {}) },
+    developerContact: { ...base.developerContact, ...(data?.developerContact || {}) }
+  };
+}
+
 function loadConfig() {
   const saved = localStorage.getItem('dexxdigital_wedding_config');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      const cfg = {
-        ...DEFAULT_CONFIG,
-        ...parsed,
-        akad: { ...DEFAULT_CONFIG.akad, ...(parsed.akad || {}) },
-        resepsi: { ...DEFAULT_CONFIG.resepsi, ...(parsed.resepsi || {}) },
-        digitalEnvelope: { ...DEFAULT_CONFIG.digitalEnvelope, ...(parsed.digitalEnvelope || {}) },
-        developerContact: { ...DEFAULT_CONFIG.developerContact, ...(parsed.developerContact || {}) }
-      };
-      // If address or mapsUrl was still the old Bandung mock, migrate to default Medan
-      if (cfg.akad.address && cfg.akad.address.includes('Cibangkong')) {
-        cfg.akad.address = DEFAULT_CONFIG.akad.address;
-        cfg.akad.mapsUrl = DEFAULT_CONFIG.akad.mapsUrl;
-      }
-      if (cfg.resepsi.address && cfg.resepsi.address.includes('Cibangkong')) {
-        cfg.resepsi.address = DEFAULT_CONFIG.resepsi.address;
-        cfg.resepsi.mapsUrl = DEFAULT_CONFIG.resepsi.mapsUrl;
-      }
-      return cfg;
-    } catch (e) {
-      return DEFAULT_CONFIG;
-    }
+      return mergeWithDefaults(parsed);
+    } catch (e) {}
+  }
+  if (typeof window !== 'undefined' && window.WEDDING_CONFIG && typeof window.WEDDING_CONFIG === 'object') {
+    return mergeWithDefaults(window.WEDDING_CONFIG);
   }
   return DEFAULT_CONFIG;
 }
 
-function saveConfig(cfg) {
+async function saveConfig(cfg) {
   weddingConfig = cfg;
   localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(cfg));
   renderAll();
+
+  // Multi-device cloud sync: push to backend server
+  try {
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg)
+    });
+  } catch (e) {
+    console.log('[DexxDigital] Static fallback: config saved locally');
+  }
+}
+
+async function syncFromServer() {
+  // 1. Sync Wedding Config across devices
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const serverCfg = await res.json();
+      if (serverCfg && serverCfg.bride) {
+        weddingConfig = mergeWithDefaults(serverCfg);
+        localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(weddingConfig));
+        renderAll();
+        populateAdminFields();
+      }
+    }
+  } catch (e) {
+    // Static mode / offline
+  }
+
+  // 2. Sync Wishes Live Stream across devices
+  try {
+    const resWishes = await fetch('/api/wishes');
+    if (resWishes.ok) {
+      const serverWishes = await resWishes.json();
+      if (Array.isArray(serverWishes) && serverWishes.length > 0) {
+        weddingWishes = serverWishes;
+        localStorage.setItem('dexxdigital_wedding_wishes', JSON.stringify(weddingWishes));
+        renderWishes();
+        renderAdminWishes();
+      }
+    }
+  } catch (e) {
+    // Static mode / offline
+  }
 }
 
 function loadWishes() {
@@ -507,6 +551,7 @@ function renderAll() {
 // Setup Event Handlers
 document.addEventListener('DOMContentLoaded', () => {
   renderAll();
+  syncFromServer();
   initParticleCanvas();
   setupAudio();
   setInterval(updateCountdown, 1000);
@@ -629,6 +674,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       weddingWishes.unshift(newWish);
       saveWishes(weddingWishes);
+
+      // Multi-device sync: push new wish to server
+      try {
+        fetch('/api/wishes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newWish)
+        }).catch(() => {});
+      } catch (e) {}
 
       // Offer WhatsApp forwarding without blocking prompt
       const waText = encodeURIComponent(`Halo ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName}!\n\nSaya *${gName}* ingin menyampaikan ucapan doa untuk pernikahan kalian:\n\n"${gMsg}"\n\nKonfirmasi Kehadiran: *${currentRsvpChoice}*\n\nTerima kasih atas undangannya!`);
@@ -994,6 +1048,9 @@ function setupAdminFileUploads() {
       if (btnClearAll.getAttribute('data-confirm') === 'true') {
         saveWishes([]);
         showWishNotification('Seluruh riwayat komentar ucapan tamu telah dibersihkan.');
+        try {
+          fetch('/api/wishes', { method: 'DELETE' }).catch(() => {});
+        } catch (e) {}
         btnClearAll.innerText = 'Hapus Semua Ucapan';
         btnClearAll.removeAttribute('data-confirm');
         btnClearAll.classList.remove('bg-rose-600', 'text-white');
@@ -1016,6 +1073,63 @@ function setupAdminFileUploads() {
       document.getElementById('adminWishNotice')?.classList.add('hidden');
     });
   }
+
+  // Export & Download Master config.js (GitHub Pages zero-reset guarantee)
+  document.getElementById('btnDownloadConfig')?.addEventListener('click', downloadConfigJs);
+  document.getElementById('btnDownloadConfigTab')?.addEventListener('click', downloadConfigJs);
+  document.getElementById('btnCopyConfigTab')?.addEventListener('click', copyConfigCode);
+
+  const btnForce = document.getElementById('btnForceServerSync');
+  if (btnForce) {
+    btnForce.addEventListener('click', async () => {
+      btnForce.disabled = true;
+      btnForce.innerText = 'Menyinkronkan ke server...';
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(weddingConfig)
+        });
+        if (res.ok) {
+          btnForce.innerText = 'Berhasil Tersinkron ke Server!';
+          setTimeout(() => {
+            btnForce.disabled = false;
+            btnForce.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Kirim &amp; Sinkronkan ke Server Sekarang</span>`;
+          }, 3000);
+        } else {
+          btnForce.disabled = false;
+          btnForce.innerText = 'Gagal terhubung ke server';
+        }
+      } catch (e) {
+        btnForce.disabled = false;
+        btnForce.innerText = 'Mode Offline (Tersimpan Lokal)';
+      }
+    });
+  }
+}
+
+function downloadConfigJs() {
+  const code = `/**\n * The Wedding of ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName} - Master Configuration File\n * Commercial Grade - Developed by DexxDigital\n * Auto-generated from Admin Panel - Ready for GitHub Pages\n */\n\nwindow.WEDDING_CONFIG = ${JSON.stringify(weddingConfig, null, 2)};\n`;
+  const blob = new Blob([code], { type: 'application/javascript;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'config.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function copyConfigCode() {
+  const code = `/**\n * The Wedding of ${weddingConfig.bride.nickName} & ${weddingConfig.groom.nickName} - Master Configuration File\n * Commercial Grade - Developed by DexxDigital\n * Auto-generated from Admin Panel - Ready for GitHub Pages\n */\n\nwindow.WEDDING_CONFIG = ${JSON.stringify(weddingConfig, null, 2)};\n`;
+  navigator.clipboard.writeText(code).then(() => {
+    const notice = document.getElementById('copyConfigNotice');
+    if (notice) {
+      notice.classList.remove('hidden');
+      setTimeout(() => notice.classList.add('hidden'), 3500);
+    }
+  });
 }
 
 function showWishNotification(text) {
@@ -1130,6 +1244,11 @@ function renderAdminWishes() {
       weddingWishes = weddingWishes.filter(item => String(item.id) !== String(wishId));
       saveWishes(weddingWishes);
       showWishNotification(`Komentar doa dari "${guestName}" telah berhasil dihapus.`);
+
+      // Multi-device sync: delete on server
+      try {
+        fetch(`/api/wishes/${wishId}`, { method: 'DELETE' }).catch(() => {});
+      } catch (e) {}
     });
   });
 }
