@@ -3,21 +3,24 @@
     "id": "w2",
     "guestName": "Citra Kusuma & Keluarga",
     "message": "Baarakallahu laka wa baaraka alaika wa jamaa bainakuma fii khoir. Doa terbaik untuk kedua mempelai!",
-    "timestamp": "1 jam yang lalu",
+    "createdAt": "2026-11-15T13:10:00.000Z",
+    "timestamp": "2 jam yang lalu",
     "rsvp": "Hadir"
   },
   {
     "id": "w3",
     "guestName": "Arya Sukma (Sahabat Kampus)",
     "message": "Alhamdulillah akhirnya hari bahagia tiba! Lancar sampai hari-H sobatku Bagas & Arina!",
-    "timestamp": "3 jam yang lalu",
+    "createdAt": "2026-11-14T10:30:00.000Z",
+    "timestamp": "Kemarin",
     "rsvp": "Hadir"
   },
   {
     "id": "w4",
     "guestName": "Cecilia & Suami",
     "message": "Happy wedding day! Maaf kami belum bisa hadir langsung, namun doa tulus kami selalu menyertai kalian berdua.",
-    "timestamp": "Kemarin",
+    "createdAt": "2026-11-12T08:15:00.000Z",
+    "timestamp": "3 hari yang lalu",
     "rsvp": "Tidak Hadir"
   }
 ]

@@ -32,21 +32,21 @@ const DEFAULT_CONFIG = {
   quoteSource: 'QS. Ar-Rum: 21',
   akad: {
     title: 'Akad Nikah',
-    date: 'Rabu, 30 Desember 2026',
+    date: 'Rabu, 30 Desember 2028',
     time: '08:00 - 10:00 WIB',
     venue: 'Masjid Raya Al-Mashun',
     address: 'Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212',
-    mapsUrl: 'https://maps.app.goo.gl/V64bA13rpYZs6AAw6',
+    mapsUrl: 'https://maps.app.goo.gl/Cj57PxxYoUhdntUW7',
   },
   resepsi: {
     title: 'Resepsi Pernikahan',
-    date: 'Kamis, 31 Desember 2026',
+    date: 'Kamis, 31 Desember 2029',
     time: '11:00 - 14:00 WIB',
     venue: 'Masjid Raya Al-Mashun',
     address: 'Jl. Sisingamangaraja No.74c, Mesjid, Kec. Medan Kota, Kota Medan, Sumatera Utara 20212',
     mapsUrl: 'https://maps.app.goo.gl/V64bA13rpYZs6AAw6',
   },
-  countdownDate: '2026-12-30T08:00:00',
+  countdownDate: '2028-12-30T08:00:00',
   gallery: [
     { id: '1', url: 'assets/images/wedding_couple_hero_1793976526912.jpg', caption: 'Timeless Portrait in Ivory' },
     { id: '2', url: 'assets/images/prewedding_landscape_1793976527564.jpg', caption: 'Sunrise Walk in Misty Pine' },
@@ -54,8 +54,14 @@ const DEFAULT_CONFIG = {
     { id: '4', url: 'assets/images/groom_portrait_1793976527573.jpg', caption: 'Classic Bespoke Groom' }
   ],
   digitalEnvelope: {
+    bankEnabled: true,
+    bankName: 'Bank Central Asia (BCA)',
+    bankNumber: '123-456-7890',
+    bankAccountName: 'Bagas Sadewa',
+    danaEnabled: true,
     danaNumber: '0812-3456-7890',
     danaAccountName: 'Bagas Sadewa & Arina',
+    qrisEnabled: true,
     qrisImageUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DANA-ARINA-BAGAS-WEDDING',
   },
   musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-piano-112191.mp3',
@@ -63,6 +69,9 @@ const DEFAULT_CONFIG = {
     agencyName: 'DexxDigital',
     tagline: 'Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif',
     whatsapp: '6281234567890',
+    instagram: 'dexxdigital',
+    tiktok: 'dexxdigital',
+    shopee: '',
   }
 };
 
@@ -71,7 +80,8 @@ const INITIAL_WISHES = [
     id: 'w1',
     guestName: 'Melissa & Pratama',
     message: 'Selamat berbahagia Arina & Bagas! Semoga cinta kalian selalu mekar abadi, rukun dan berkah hingga kakek nenek.',
-    timestamp: 'Baru saja',
+    createdAt: Date.now() - 18 * 60 * 1000,
+    timestamp: '18 menit yang lalu',
     rsvp: 'Hadir',
     photoUrl: 'assets/images/bride_portrait_1793976527158.jpg'
   },
@@ -79,21 +89,24 @@ const INITIAL_WISHES = [
     id: 'w2',
     guestName: 'Citra Kusuma & Keluarga',
     message: 'Baarakallahu laka wa baaraka alaika wa jamaa bainakuma fii khoir. Doa terbaik untuk kedua mempelai!',
-    timestamp: '1 jam yang lalu',
+    createdAt: Date.now() - 2 * 60 * 60 * 1000,
+    timestamp: '2 jam yang lalu',
     rsvp: 'Hadir'
   },
   {
     id: 'w3',
     guestName: 'Arya Sukma (Sahabat Kampus)',
     message: 'Alhamdulillah akhirnya hari bahagia tiba! Lancar sampai hari-H sobatku Bagas & Arina!',
-    timestamp: '3 jam yang lalu',
+    createdAt: Date.now() - 26 * 60 * 60 * 1000,
+    timestamp: 'Kemarin',
     rsvp: 'Hadir'
   },
   {
     id: 'w4',
     guestName: 'Cecilia & Suami',
     message: 'Happy wedding day! Maaf kami belum bisa hadir langsung, namun doa tulus kami selalu menyertai kalian berdua.',
-    timestamp: 'Kemarin',
+    createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    timestamp: '3 hari yang lalu',
     rsvp: 'Tidak Hadir'
   }
 ];
@@ -270,11 +283,13 @@ async function initFirebaseSync() {
         const cloudWishes = [];
         querySnapshot.forEach((doc) => {
           const d = doc.data();
+          const resolvedMs = parseTimestampMs(d.createdAt, null) || parseTimestampMs(d.createdAtMs, doc.id);
           cloudWishes.push({
             id: doc.id,
             guestName: d.guestName || 'Tamu',
             message: d.message || '',
-            timestamp: d.timestamp || 'Baru saja',
+            createdAt: resolvedMs || Date.now(),
+            timestamp: d.timestamp || '',
             rsvp: d.rsvp || 'Hadir',
             photoUrl: d.photoUrl || undefined
           });
@@ -431,26 +446,147 @@ function initParticleCanvas() {
   render();
 }
 
-// Countdown Clock Timer
+// Indonesian & English Months Dictionary for Bulletproof Date Parsing
+const MONTH_MAP = {
+  januari: 0, jan: 0, january: 0,
+  februari: 1, feb: 1, february: 1,
+  maret: 2, mar: 2, march: 2,
+  april: 3, apr: 3,
+  mei: 4, may: 4,
+  juni: 5, jun: 5, june: 5,
+  juli: 6, jul: 6, july: 6,
+  agustus: 7, ags: 7, agu: 7, aug: 7, august: 7,
+  september: 8, sep: 8,
+  oktober: 9, okt: 9, oct: 9, october: 9,
+  november: 10, nov: 10,
+  desember: 11, des: 11, dec: 11, december: 11
+};
+
+function parseCountdownDate(dateStr, timeStr) {
+  const now = Date.now();
+
+  function ensureFuture(ts) {
+    if (!ts || isNaN(ts)) return null;
+    let t = ts;
+    // If target timestamp is in the past, advance by years so countdown never stays at 00
+    while (t <= now) {
+      const d = new Date(t);
+      d.setFullYear(d.getFullYear() + 1);
+      t = d.getTime();
+    }
+    return t;
+  }
+
+  // Fallback to Akad date if countdownDate is missing
+  let sourceStr = (dateStr && String(dateStr).trim()) || weddingConfig?.akad?.date || '2028-12-30T08:00:00';
+
+  // 1. Try ISO / Standard Date parsing
+  if (sourceStr.includes('T') || sourceStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const directDate = new Date(sourceStr);
+    if (!isNaN(directDate.getTime())) {
+      const futureTs = ensureFuture(directDate.getTime());
+      if (futureTs) return futureTs;
+    }
+  }
+
+  // 2. Text Parser (e.g. "Rabu, 30 Desember 2028" or "30 Desember 2028" or "30/12/2028")
+  try {
+    const cleaned = String(sourceStr).toLowerCase();
+    let month = null;
+
+    // Check for month names / abbreviations
+    for (const [mName, mIdx] of Object.entries(MONTH_MAP)) {
+      const regex = new RegExp(`\\b${mName}\\b`);
+      if (regex.test(cleaned)) {
+        month = mIdx;
+        break;
+      }
+    }
+
+    // Year match (2025 - 2035)
+    let year = null;
+    const yearMatch = cleaned.match(/\b(202\d|203\d)\b/);
+    if (yearMatch) {
+      year = parseInt(yearMatch[1], 10);
+    } else {
+      year = new Date().getFullYear() + 2;
+    }
+
+    // Day match (1 - 31)
+    let day = null;
+    const tokens = cleaned.replace(/[^a-z0-9]/g, ' ').split(/\s+/);
+    for (const token of tokens) {
+      const num = parseInt(token, 10);
+      if (!isNaN(num) && num >= 1 && num <= 31 && num !== year) {
+        day = num;
+        break;
+      }
+    }
+    if (!day) day = 30;
+    if (month === null) month = 11; // Default to Desember
+
+    // Hour & Minute match
+    let hour = 8, minute = 0;
+    const combinedTime = String(timeStr || sourceStr || weddingConfig?.akad?.time || '');
+    const timeMatch = combinedTime.match(/(\d{1,2})[:.](\d{2})/);
+    if (timeMatch) {
+      hour = parseInt(timeMatch[1], 10);
+      minute = parseInt(timeMatch[2], 10);
+    }
+
+    const constructedDate = new Date(year, month, day, hour, minute, 0);
+    if (!isNaN(constructedDate.getTime())) {
+      return ensureFuture(constructedDate.getTime());
+    }
+  } catch (e) {}
+
+  // Safe fallback to guaranteed future date
+  const fallback = new Date();
+  fallback.setFullYear(fallback.getFullYear() + 2);
+  fallback.setMonth(11, 30);
+  fallback.setHours(8, 0, 0, 0);
+  return fallback.getTime();
+}
+
+// Countdown Clock Timer (Live Ticking Every Second)
 function updateCountdown() {
-  const target = new Date(weddingConfig.countdownDate).getTime();
-  const now = new Date().getTime();
-  const diff = Math.max(0, target - now);
+  try {
+    const targetTime = parseCountdownDate(weddingConfig?.countdownDate, weddingConfig?.akad?.time);
+    const now = Date.now();
+    let diff = targetTime - now;
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const secs = Math.floor((diff % 1000) / 1000);
+    // If diff is <= 0 for any reason, advance 1 day so it continues counting
+    if (diff <= 0) {
+      diff = 24 * 3600 * 1000;
+    }
 
-  const dEl = document.getElementById('countDays');
-  const hEl = document.getElementById('countHours');
-  const mEl = document.getElementById('countMinutes');
-  const sEl = document.getElementById('countSeconds');
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
-  if (dEl) dEl.innerText = String(days).padStart(2, '0');
-  if (hEl) hEl.innerText = String(hours).padStart(2, '0');
-  if (mEl) mEl.innerText = String(mins).padStart(2, '0');
-  if (sEl) sEl.innerText = String(secs).padStart(2, '0');
+    const dEl = document.getElementById('countDays') || document.getElementById('cdDays');
+    const hEl = document.getElementById('countHours') || document.getElementById('cdHours');
+    const mEl = document.getElementById('countMinutes') || document.getElementById('cdMinutes');
+    const sEl = document.getElementById('countSeconds') || document.getElementById('cdSeconds');
+
+    const dText = String(days).padStart(2, '0');
+    const hText = String(hours).padStart(2, '0');
+    const mText = String(mins).padStart(2, '0');
+    const sText = String(secs).padStart(2, '0');
+
+    if (dEl) dEl.textContent = dText;
+    if (hEl) hEl.textContent = hText;
+    if (mEl) mEl.textContent = mText;
+    if (sEl) sEl.textContent = sText;
+
+    const preview = document.getElementById('previewCountdownText');
+    if (preview) {
+      preview.innerText = `${days} hari ${hours} jam ${mins} mnt ${secs} dtk lagi`;
+    }
+  } catch (err) {
+    console.warn('[DexxDigital] updateCountdown notice:', err);
+  }
 }
 
 // Audio Player
@@ -530,6 +666,94 @@ function renderGallery() {
   });
 }
 
+const INDONESIAN_MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+function parseTimestampMs(rawCreatedAt, fallbackId) {
+  if (typeof rawCreatedAt === 'number' && !isNaN(rawCreatedAt) && rawCreatedAt > 0) {
+    return rawCreatedAt;
+  }
+  if (rawCreatedAt && typeof rawCreatedAt === 'object') {
+    if (typeof rawCreatedAt.toMillis === 'function') {
+      return rawCreatedAt.toMillis();
+    }
+    if (typeof rawCreatedAt.seconds === 'number') {
+      return rawCreatedAt.seconds * 1000 + Math.floor((rawCreatedAt.nanoseconds || 0) / 1e6);
+    }
+    if (typeof rawCreatedAt._seconds === 'number') {
+      return rawCreatedAt._seconds * 1000;
+    }
+  }
+  if (typeof rawCreatedAt === 'string' && rawCreatedAt.trim()) {
+    const asNum = Number(rawCreatedAt);
+    if (!isNaN(asNum) && asNum > 1000000000000) return asNum;
+    const parsed = Date.parse(rawCreatedAt);
+    if (!isNaN(parsed)) return parsed;
+  }
+  // Extract epoch ms from wish id like "wish-1763218000000"
+  if (typeof fallbackId === 'string') {
+    const match = fallbackId.match(/^wish-(\d{12,15})$/);
+    if (match) {
+      const ts = parseInt(match[1], 10);
+      if (!isNaN(ts)) return ts;
+    }
+  }
+  return null;
+}
+
+function formatWishTime(wish) {
+  if (!wish) return '';
+  const tsMs = parseTimestampMs(wish.createdAt || wish.createdAtMs, wish.id);
+  if (!tsMs) {
+    if (wish.timestamp && wish.timestamp !== 'Baru saja') {
+      return wish.timestamp;
+    }
+    return 'Beberapa waktu lalu';
+  }
+
+  const now = Date.now();
+  const diffSec = Math.max(0, Math.floor((now - tsMs) / 1000));
+
+  if (diffSec < 60) {
+    return 'Baru saja';
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin} menit yang lalu`;
+  }
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) {
+    return `${diffHour} jam yang lalu`;
+  }
+
+  const d = new Date(tsMs);
+  const day = d.getDate();
+  const month = INDONESIAN_MONTHS_SHORT[d.getMonth()] || '';
+  const year = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) {
+    return `Kemarin · ${hh}:${mm}`;
+  }
+  if (diffDay < 7) {
+    return `${diffDay} hari yang lalu · ${day} ${month} ${year}`;
+  }
+  return `${day} ${month} ${year}, ${hh}:${mm}`;
+}
+
+function formatWishExactDate(wish) {
+  const tsMs = parseTimestampMs(wish?.createdAt || wish?.createdAtMs, wish?.id);
+  if (!tsMs) return wish?.timestamp || '';
+  const d = new Date(tsMs);
+  const day = d.getDate();
+  const month = INDONESIAN_MONTHS_SHORT[d.getMonth()] || '';
+  const year = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${day} ${month} ${year} pukul ${hh}:${mm}`;
+}
+
 // Render Wishes Feed
 function renderWishes() {
   const feed = document.getElementById('wishesFeed');
@@ -548,6 +772,9 @@ function renderWishes() {
       ? 'bg-rose-950/60 text-rose-300 border-rose-500/40'
       : 'bg-amber-950/60 text-amber-300 border-amber-500/40';
 
+    const displayTime = formatWishTime(w);
+    const exactTime = formatWishExactDate(w);
+
     card.innerHTML = `
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-2.5">
@@ -556,14 +783,18 @@ function renderWishes() {
           </div>
           <div>
             <h4 class="text-sm font-semibold text-stone-100">${escapeHtml(w.guestName)}</h4>
-            <span class="text-[11px] text-stone-400 block">${w.timestamp}</span>
+            <span class="text-[11px] text-stone-400 block" title="${escapeHtml(exactTime)}">${escapeHtml(displayTime)}</span>
           </div>
         </div>
-        <span class="text-[10px] px-2 py-0.5 rounded-full border ${rsvpBadgeColor}">${w.rsvp}</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full border ${rsvpBadgeColor}">${escapeHtml(w.rsvp || 'Hadir')}</span>
       </div>
       <p class="text-sm text-stone-300 mt-2.5 leading-relaxed font-light">${escapeHtml(w.message)}</p>
-      ${w.photoUrl ? `<div class="mt-3"><img src="${w.photoUrl}" alt="Foto Tamu" class="max-h-48 rounded-lg object-cover border border-stone-700 shadow-md cursor-pointer" onclick="openLightbox('${w.photoUrl}', 'Foto dari ${escapeHtml(w.guestName)}')"></div>` : ''}
+      ${w.photoUrl ? `<div class="mt-3"><img src="${w.photoUrl}" alt="Foto Tamu" class="max-h-48 rounded-lg object-cover border border-stone-700 shadow-md cursor-pointer wish-guest-photo" /></div>` : ''}
     `;
+    const photoEl = card.querySelector('.wish-guest-photo');
+    if (photoEl && w.photoUrl) {
+      photoEl.addEventListener('click', () => openLightbox(w.photoUrl, `Foto dari ${w.guestName || 'Tamu'}`));
+    }
     feed.appendChild(card);
   });
 }
@@ -674,38 +905,151 @@ function renderAll() {
   const resMap = document.getElementById('resepsiMapUrl');
   if (resMap) resMap.href = c.resepsi.mapsUrl;
 
-  // Envelope
+  // Envelope (Bank, DANA [Opsional] & QRIS [Opsional])
+  const env = c.digitalEnvelope || {};
+  const bankNumVal = env.bankNumber !== undefined ? String(env.bankNumber).trim() : '123-456-7890';
+  const bankNameVal = env.bankName !== undefined ? String(env.bankName).trim() : 'Bank Central Asia (BCA)';
+  const bankAccVal = env.bankAccountName !== undefined ? String(env.bankAccountName).trim() : 'Bagas Sadewa';
+  const showBank = env.bankEnabled !== false && Boolean(bankNumVal || bankNameVal);
+
+  const danaNumVal = env.danaNumber !== undefined ? String(env.danaNumber).trim() : '0812-3456-7890';
+  const danaAccVal = env.danaAccountName !== undefined ? String(env.danaAccountName).trim() : 'Bagas Sadewa & Arina';
+  const showDana = env.danaEnabled !== false && Boolean(danaNumVal);
+
+  const qrisUrlVal = env.qrisImageUrl !== undefined
+    ? String(env.qrisImageUrl).trim()
+    : 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DANA-ARINA-BAGAS-WEDDING';
+  const showQris = env.qrisEnabled !== false && Boolean(qrisUrlVal);
+
+  const labelBank = document.getElementById('labelBankName');
+  if (labelBank) labelBank.innerText = bankNameVal || 'Transfer Bank';
+  const bankNum = document.getElementById('envelopeBankNumber');
+  if (bankNum) bankNum.innerText = bankNumVal || '-';
+  const bankAcc = document.getElementById('envelopeBankAccountName');
+  if (bankAcc) bankAcc.innerText = bankAccVal || '-';
+
   const danaNum = document.getElementById('envelopeDanaNumber');
-  if (danaNum) danaNum.innerText = c.digitalEnvelope.danaNumber;
+  if (danaNum) danaNum.innerText = danaNumVal || '';
   const danaNm = document.getElementById('envelopeDanaName');
-  if (danaNm) danaNm.innerText = c.digitalEnvelope.danaAccountName;
+  if (danaNm) danaNm.innerText = danaAccVal || '-';
   const qrisPrev = document.getElementById('imgQrisPreview');
-  if (qrisPrev) qrisPrev.src = c.digitalEnvelope.qrisImageUrl;
+  if (qrisPrev && qrisUrlVal) qrisPrev.src = qrisUrlVal;
+
+  const cardBank = document.getElementById('cardBankTransfer');
+  const cardDana = document.getElementById('cardDanaTransfer');
+  const cardQris = document.getElementById('cardQrisTransfer');
+  if (cardBank) cardBank.classList.toggle('hidden', !showBank);
+  if (cardDana) cardDana.classList.toggle('hidden', !showDana);
+  if (cardQris) cardQris.classList.toggle('hidden', !showQris);
+
+  const activeMethods = [];
+  if (showBank) activeMethods.push('Transfer Bank');
+  if (showDana) activeMethods.push('DANA');
+  if (showQris) activeMethods.push('scan QRIS');
+
+  const giftSection = document.getElementById('gift-section');
+  if (giftSection) {
+    giftSection.classList.toggle('hidden', activeMethods.length === 0);
+  }
+
+  const envGrid = document.getElementById('envelopeCardsGrid');
+  if (envGrid) {
+    if (activeMethods.length === 1) {
+      envGrid.className = 'grid grid-cols-1 max-w-md mx-auto gap-4 text-left';
+    } else if (activeMethods.length === 2) {
+      envGrid.className = 'grid grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto gap-4 text-left';
+    } else {
+      envGrid.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 text-left';
+    }
+  }
+
+  const giftSubtitle = document.getElementById('giftSectionSubtitle');
+  if (giftSubtitle && activeMethods.length > 0) {
+    let methodPhrase = activeMethods[0];
+    if (activeMethods.length === 2) {
+      methodPhrase = `${activeMethods[0]} atau ${activeMethods[1]}`;
+    } else if (activeMethods.length === 3) {
+      methodPhrase = `${activeMethods[0]}, ${activeMethods[1]} atau ${activeMethods[2]}`;
+    }
+    giftSubtitle.innerText = `Doa restu Anda merupakan karunia terindah bagi kami. Namun jika ingin memberikan tanda kasih berupa kado digital, dapat melalui ${methodPhrase}.`;
+  }
 
   // Closing & Footer - DexxDigital Branding
   const closeNames = document.getElementById('closingCoupleNames');
   if (closeNames) closeNames.innerText = `${c.bride.nickName} & ${c.groom.nickName}`;
   const copyRight = document.getElementById('footerCopyright');
   if (copyRight) copyRight.innerText = `© 2026 ${c.bride.nickName} & ${c.groom.nickName}`;
+  
+  const dev = c.developerContact || {};
   const agencyName = document.getElementById('footerAgencyName');
-  if (agencyName) agencyName.innerText = c.developerContact.agencyName || 'DexxDigital';
+  if (agencyName) agencyName.innerText = dev.agencyName || 'DexxDigital';
   const agencyTag = document.getElementById('footerAgencyTagline');
-  if (agencyTag) agencyTag.innerText = c.developerContact.tagline;
+  if (agencyTag) agencyTag.innerText = dev.tagline || 'Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif';
+  
   const agencyWa = document.getElementById('footerAgencyWa');
-  if (agencyWa) agencyWa.href = `https://wa.me/${c.developerContact.whatsapp}?text=Halo%20DexxDigital!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital.`;
+  if (agencyWa) {
+    const waNum = (dev.whatsapp || '6281234567890').replace(/[^0-9]/g, '');
+    agencyWa.href = `https://wa.me/${waNum}?text=Halo%20DexxDigital!%20Saya%20tertarik%20pesan%20jasa%20pembuatan%20website%20undangan%20pernikahan%20digital.`;
+  }
+
+  const agencyIg = document.getElementById('footerAgencyIg');
+  if (agencyIg) {
+    if (dev.instagram && dev.instagram.trim()) {
+      const igClean = dev.instagram.trim().replace(/^@/, '');
+      agencyIg.href = `https://instagram.com/${igClean}`;
+      agencyIg.classList.remove('hidden');
+    } else {
+      agencyIg.classList.add('hidden');
+    }
+  }
+
+  const agencyTiktok = document.getElementById('footerAgencyTiktok');
+  if (agencyTiktok) {
+    if (dev.tiktok && dev.tiktok.trim()) {
+      const ttClean = dev.tiktok.trim().replace(/^@/, '');
+      agencyTiktok.href = `https://tiktok.com/@${ttClean}`;
+      agencyTiktok.classList.remove('hidden');
+    } else {
+      agencyTiktok.classList.add('hidden');
+    }
+  }
+
+  const agencyShopee = document.getElementById('footerAgencyShopee');
+  if (agencyShopee) {
+    if (dev.shopee && dev.shopee.trim()) {
+      agencyShopee.href = dev.shopee.trim().startsWith('http') ? dev.shopee.trim() : `https://${dev.shopee.trim()}`;
+      agencyShopee.classList.remove('hidden');
+    } else {
+      agencyShopee.classList.add('hidden');
+    }
+  }
 
   renderGallery();
   renderWishes();
+  updateCountdown();
 }
 
-// Setup Event Handlers
-document.addEventListener('DOMContentLoaded', () => {
+// Setup Event Handlers & App Lifecycle
+let isAppInitialized = false;
+
+function initApp() {
+  if (isAppInitialized) return;
+  isAppInitialized = true;
+
   renderAll();
   syncFromServer();
   initParticleCanvas();
   setupAudio();
-  setInterval(updateCountdown, 1000);
   updateCountdown();
+  if (!window._countdownTimerInterval) {
+    window._countdownTimerInterval = setInterval(updateCountdown, 1000);
+  }
+  if (!window._wishTimeRefreshInterval) {
+    window._wishTimeRefreshInterval = setInterval(() => {
+      renderWishes();
+      renderAdminWishes();
+    }, 30000);
+  }
 
   // Buka Undangan Button
   const btnOpen = document.getElementById('btnOpenInvitation');
@@ -738,13 +1082,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Copy Bank Account Number
+  const btnCopyBank = document.getElementById('btnCopyBank');
+  const labelCopyBank = document.getElementById('labelCopyBank');
+  if (btnCopyBank) {
+    btnCopyBank.addEventListener('click', () => {
+      const pureNum = (weddingConfig.digitalEnvelope?.bankNumber || '123-456-7890').replace(/[^0-9]/g, '');
+      copyToClipboard(pureNum, () => {
+        if (labelCopyBank) labelCopyBank.innerText = 'Nomor Rekening Tersalin!';
+        setTimeout(() => {
+          if (labelCopyBank) labelCopyBank.innerText = 'Salin No. Rekening';
+        }, 2000);
+      });
+    });
+  }
+
   // Copy DANA Number
   const btnCopy = document.getElementById('btnCopyDana');
   const labelCopy = document.getElementById('labelCopyDana');
   if (btnCopy) {
     btnCopy.addEventListener('click', () => {
-      const pureNumber = weddingConfig.digitalEnvelope.danaNumber.replace(/[^0-9]/g, '');
-      navigator.clipboard.writeText(pureNumber).then(() => {
+      const pureNumber = (weddingConfig.digitalEnvelope?.danaNumber || '').replace(/[^0-9]/g, '');
+      copyToClipboard(pureNumber, () => {
         if (labelCopy) labelCopy.innerText = 'Nomor DANA Tersalin!';
         setTimeout(() => {
           if (labelCopy) labelCopy.innerText = 'Salin No. DANA';
@@ -813,10 +1172,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const gMsg = msgInput.value.trim();
       if (!gName || !gMsg) return;
 
+      const nowMs = Date.now();
       const newWish = {
-        id: 'wish-' + Date.now(),
+        id: 'wish-' + nowMs,
         guestName: gName,
         message: gMsg,
+        createdAt: nowMs,
         timestamp: 'Baru saja',
         rsvp: currentRsvpChoice,
         photoUrl: currentGuestPhotoData || undefined
@@ -833,10 +1194,10 @@ document.addEventListener('DOMContentLoaded', () => {
             message: gMsg,
             rsvp: currentRsvpChoice,
             photoUrl: currentGuestPhotoData || null,
-            timestamp: 'Baru saja',
+            createdAtMs: nowMs,
             createdAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
               ? firebase.firestore.FieldValue.serverTimestamp()
-              : new Date()
+              : new Date(nowMs)
           }).catch(err => {
             console.warn('[DexxDigital] Firestore wish add error:', err);
           });
@@ -871,33 +1232,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ================= ADMIN PANEL TRIGGER (TERSEMBUNYI TANPA NONGOL DI PUBLIK) =================
-  // 1. Shortcut Keyboard: Ctrl + Shift + A
-  window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-      e.preventDefault();
-      openAdminPanel();
-    }
-  });
+  // ================= ADMIN & DEVELOPER CONSOLE TRIGGERS (TERSEMBUNYI) =================
+  let devClickCounter = 0;
 
-  // 2. URL parameter ?admin=1 atau hash #admin
-  if (new URLSearchParams(window.location.search).get('admin') === '1' || window.location.hash === '#admin') {
-    openAdminPanel();
-  }
-
-  // 3. Secret Trigger: Klik 5 kali pada teks hak cipta footer
+  // 1. Secret Trigger: Klik Copyright Footer 3x membuka DexxDigital Developer Console
   const footerCopy = document.getElementById('footerCopyright');
   if (footerCopy) {
     footerCopy.addEventListener('click', () => {
-      adminClickCounter++;
-      if (adminClickCounter >= 5) {
-        adminClickCounter = 0;
-        openAdminPanel();
+      devClickCounter++;
+      if (devClickCounter >= 3) {
+        devClickCounter = 0;
+        openDevPortal();
       }
     });
   }
 
-  // 4. Subtle Discreet Trigger Button di Footer (Hidden in Plain Sight)
+  // 2. Subtle Discreet Flower/Sparkle Button di Footer (jika ada) -> Buka Admin Panel Klien
   const btnSecretAdmin = document.getElementById('btnSecretAdmin');
   if (btnSecretAdmin) {
     btnSecretAdmin.addEventListener('click', (e) => {
@@ -909,9 +1259,106 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mulai sinkronisasi Firebase Firestore & server
   initFirebaseSync();
   setupAdminPanelLogic();
-});
+  setupDevPortalLogic();
+  checkUrlTriggers();
+}
 
-// Admin Panel Logic
+// Global Key Sequence Buffer for '89' and 'dexx'
+let secretKeyBuffer = '';
+let secretKeyTimer = null;
+
+function handleGlobalKeydown(e) {
+  const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+  const isShift = e.shiftKey;
+  const key = (e.key || '').toLowerCase();
+  const code = e.code || '';
+
+  // 1. Primary Shortcut: Ctrl + Shift + 89 / Ctrl + Shift + 8 / Ctrl + Shift + 9
+  // Note: On physical keyboards, Shift + 8 produces '*' and Shift + 9 produces '(' on US layout.
+  // We check key ('8', '9', '*', '(') and code ('Digit8', 'Digit9', 'Numpad8', 'Numpad9').
+  if (isCtrlOrMeta && isShift) {
+    if (
+      key === '8' || key === '9' || key === '*' || key === '(' ||
+      code === 'Digit8' || code === 'Digit9' || code === 'Numpad8' || code === 'Numpad9'
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      openDevPortal();
+      return;
+    }
+    if (key === 'd') {
+      e.preventDefault();
+      e.stopPropagation();
+      openDevPortal();
+      return;
+    }
+    if (key === 'a') {
+      e.preventDefault();
+      e.stopPropagation();
+      openAdminPanel();
+      return;
+    }
+  }
+
+  // 2. Typing Sequence Buffer: typing "8" followed by "9" (sequence '89') anywhere
+  if (key && key.length === 1 && !isCtrlOrMeta) {
+    secretKeyBuffer += key;
+    if (secretKeyBuffer.length > 8) secretKeyBuffer = secretKeyBuffer.slice(-8);
+    clearTimeout(secretKeyTimer);
+    secretKeyTimer = setTimeout(() => { secretKeyBuffer = ''; }, 2500);
+
+    if (secretKeyBuffer.endsWith('89') || secretKeyBuffer.endsWith('dexx')) {
+      secretKeyBuffer = '';
+      openDevPortal();
+      return;
+    }
+    if (secretKeyBuffer.endsWith('admin')) {
+      secretKeyBuffer = '';
+      openAdminPanel();
+      return;
+    }
+  }
+}
+
+// Check URL Parameters or Hash Triggers (?dev=89, ?dev=1, #dev, #dev89, ?admin=1)
+function checkUrlTriggers() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash || '';
+    if (
+      urlParams.get('dev') === '89' || urlParams.get('dev') === '1' || urlParams.get('dev') === 'true' ||
+      hash === '#dev' || hash === '#dev89' || hash === '#developer'
+    ) {
+      openDevPortal();
+    }
+    if (
+      urlParams.get('admin') === '1' || urlParams.get('admin') === 'true' ||
+      hash === '#admin'
+    ) {
+      openAdminPanel();
+    }
+  } catch (e) {}
+}
+
+// Attach Global Keyboard Listener immediately in capture phase
+window.addEventListener('keydown', handleGlobalKeydown, true);
+
+// Start Countdown and check lifecycle immediately
+try {
+  updateCountdown();
+  if (!window._countdownTimerInterval) {
+    window._countdownTimerInterval = setInterval(updateCountdown, 1000);
+  }
+} catch (e) {}
+
+// Robust Lifecycle: Run initApp regardless of whether DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+
+// Admin Panel Helpers
 function openAdminPanel() {
   const modal = document.getElementById('modalAdmin');
   if (modal) {
@@ -927,6 +1374,28 @@ function closeAdminPanel() {
     modal.classList.remove('flex');
   }
 }
+
+// Developer Portal Helpers
+function openDevPortal() {
+  const modal = document.getElementById('modalDevPortal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeDevPortal() {
+  const modal = document.getElementById('modalDevPortal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+window.openAdminPanel = openAdminPanel;
+window.closeAdminPanel = closeAdminPanel;
+window.openDevPortal = openDevPortal;
+window.closeDevPortal = closeDevPortal;
 
 function setupAdminPanelLogic() {
   const btnClose = document.getElementById('btnCloseAdmin');
@@ -1073,9 +1542,44 @@ function populateAdminFields() {
   const gOrder = document.getElementById('editGroomOrderChild');
   if (gOrder) gOrder.value = c.groom.orderChild;
 
-  // Events
+  // Ayat & Kutipan Doa (Editable in Admin Panel)
+  const qArabic = document.getElementById('editQuoteArabic');
+  if (qArabic) qArabic.value = c.quoteArabic || '';
+  const qTrans = document.getElementById('editQuoteTranslation');
+  if (qTrans) qTrans.value = c.quoteTranslation || '';
+  const qSource = document.getElementById('editQuoteSource');
+  if (qSource) qSource.value = c.quoteSource || '';
+
+  // Events & Countdown
   const countDate = document.getElementById('editCountdownDate');
-  if (countDate) countDate.value = c.countdownDate || '';
+  if (countDate) {
+    if (c.countdownDate && c.countdownDate.includes('T')) {
+      countDate.value = c.countdownDate.slice(0, 16);
+    } else {
+      const ts = parseCountdownDate(c.countdownDate || c.akad?.date, c.akad?.time);
+      const iso = new Date(ts - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      countDate.value = iso;
+    }
+  }
+
+  // Button Sync Countdown From Akad Date & Time
+  const btnSyncAkad = document.getElementById('btnSyncCountdownFromAkad');
+  if (btnSyncAkad && !btnSyncAkad._boundListener) {
+    btnSyncAkad._boundListener = true;
+    btnSyncAkad.addEventListener('click', () => {
+      const akD = document.getElementById('editAkadDate')?.value || weddingConfig.akad?.date || '';
+      const akT = document.getElementById('editAkadTime')?.value || weddingConfig.akad?.time || '';
+      const ts = parseCountdownDate(akD, akT);
+      const iso = new Date(ts - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      const countInput = document.getElementById('editCountdownDate');
+      if (countInput) {
+        countInput.value = iso;
+        weddingConfig.countdownDate = iso;
+        updateCountdown();
+      }
+    });
+  }
+
   const akDate = document.getElementById('editAkadDate');
   if (akDate) akDate.value = c.akad.date || '';
   const akTime = document.getElementById('editAkadTime');
@@ -1098,18 +1602,67 @@ function populateAdminFields() {
   const resMap = document.getElementById('editResepsiMapUrl');
   if (resMap) resMap.value = c.resepsi.mapsUrl || '';
 
-  // Envelope
+  // Envelope (Bank, DANA & QRIS Opsional)
+  if (!c.digitalEnvelope) c.digitalEnvelope = {};
+  const toggleBank = document.getElementById('toggleBankEnabled');
+  if (toggleBank) toggleBank.checked = c.digitalEnvelope.bankEnabled !== false;
+  const bankNameInput = document.getElementById('editBankName');
+  if (bankNameInput) bankNameInput.value = c.digitalEnvelope.bankName ?? 'Bank Central Asia (BCA)';
+  const bankNumInput = document.getElementById('editBankNumber');
+  if (bankNumInput) bankNumInput.value = c.digitalEnvelope.bankNumber ?? '123-456-7890';
+  const bankAccInput = document.getElementById('editBankAccountName');
+  if (bankAccInput) bankAccInput.value = c.digitalEnvelope.bankAccountName ?? 'Bagas Sadewa';
+
+  const toggleDana = document.getElementById('toggleDanaEnabled');
+  const currentDanaNum = c.digitalEnvelope.danaNumber ?? '0812-3456-7890';
+  if (toggleDana) toggleDana.checked = c.digitalEnvelope.danaEnabled !== false && Boolean(String(currentDanaNum).trim());
   const danaNum = document.getElementById('editDanaNumber');
-  if (danaNum) danaNum.value = c.digitalEnvelope.danaNumber;
+  if (danaNum) danaNum.value = currentDanaNum;
   const danaName = document.getElementById('editDanaName');
-  if (danaName) danaName.value = c.digitalEnvelope.danaAccountName;
+  if (danaName) danaName.value = c.digitalEnvelope.danaAccountName ?? 'Bagas Sadewa & Arina';
+
+  const currentQrisUrl = c.digitalEnvelope.qrisImageUrl ?? '';
+  const toggleQris = document.getElementById('toggleQrisEnabled');
+  if (toggleQris) toggleQris.checked = c.digitalEnvelope.qrisEnabled !== false && Boolean(String(currentQrisUrl).trim());
+  updateAdminQrisPreview(currentQrisUrl, c.digitalEnvelope.qrisEnabled !== false);
 
   renderAdminGalleryList();
   renderAdminWishes();
+  updateCountdown();
+}
+
+function updateAdminQrisPreview(qrisUrl, isEnabled) {
+  const thumbWrap = document.getElementById('adminQrisThumbWrap');
+  const thumb = document.getElementById('adminQrisThumb');
+  const status = document.getElementById('adminQrisStatus');
+  const hasUrl = Boolean(qrisUrl && String(qrisUrl).trim());
+
+  if (thumb && thumbWrap) {
+    if (hasUrl) {
+      thumb.src = qrisUrl;
+      thumbWrap.classList.remove('hidden');
+    } else {
+      thumb.removeAttribute('src');
+      thumbWrap.classList.add('hidden');
+    }
+  }
+  if (status) {
+    if (!hasUrl) {
+      status.innerText = 'Tidak ada QRIS (disembunyikan)';
+      status.className = 'text-[11px] text-stone-400';
+    } else if (isEnabled === false) {
+      status.innerText = 'QRIS nonaktif (disembunyikan)';
+      status.className = 'text-[11px] text-amber-400';
+    } else {
+      status.innerText = 'QRIS aktif & tampil';
+      status.className = 'text-[11px] text-emerald-400';
+    }
+  }
 }
 
 function collectAdminFieldsAndSave() {
   const c = { ...weddingConfig };
+  c.digitalEnvelope = { ...(weddingConfig.digitalEnvelope || {}) };
 
   const bFull = document.getElementById('editBrideFullName')?.value;
   if (bFull) c.bride.fullName = bFull;
@@ -1121,6 +1674,15 @@ function collectAdminFieldsAndSave() {
   const gNick = document.getElementById('editGroomNickName')?.value;
   if (gNick) c.groom.nickName = gNick;
 
+  // Ayat & Kutipan Doa
+  const qArabic = document.getElementById('editQuoteArabic')?.value;
+  if (qArabic !== undefined) c.quoteArabic = qArabic;
+  const qTrans = document.getElementById('editQuoteTranslation')?.value;
+  if (qTrans !== undefined) c.quoteTranslation = qTrans;
+  const qSource = document.getElementById('editQuoteSource')?.value;
+  if (qSource !== undefined) c.quoteSource = qSource;
+
+  // Events & Countdown
   const countD = document.getElementById('editCountdownDate')?.value;
   if (countD) c.countdownDate = countD;
 
@@ -1146,10 +1708,25 @@ function collectAdminFieldsAndSave() {
   const resMap = document.getElementById('editResepsiMapUrl')?.value;
   if (resMap !== undefined) c.resepsi.mapsUrl = resMap;
 
+  const toggleBank = document.getElementById('toggleBankEnabled');
+  if (toggleBank) c.digitalEnvelope.bankEnabled = toggleBank.checked;
+  const bankNameVal = document.getElementById('editBankName')?.value;
+  if (bankNameVal !== undefined) c.digitalEnvelope.bankName = bankNameVal.trim();
+  const bankNumVal = document.getElementById('editBankNumber')?.value;
+  if (bankNumVal !== undefined) c.digitalEnvelope.bankNumber = bankNumVal.trim();
+  const bankAccVal = document.getElementById('editBankAccountName')?.value;
+  if (bankAccVal !== undefined) c.digitalEnvelope.bankAccountName = bankAccVal.trim();
+
+  const toggleDana = document.getElementById('toggleDanaEnabled');
   const danaNum = document.getElementById('editDanaNumber')?.value;
-  if (danaNum) c.digitalEnvelope.danaNumber = danaNum;
+  if (danaNum !== undefined) c.digitalEnvelope.danaNumber = danaNum.trim();
+  if (toggleDana) c.digitalEnvelope.danaEnabled = toggleDana.checked;
   const danaName = document.getElementById('editDanaName')?.value;
-  if (danaName) c.digitalEnvelope.danaAccountName = danaName;
+  if (danaName !== undefined) c.digitalEnvelope.danaAccountName = danaName.trim();
+
+  const toggleQris = document.getElementById('toggleQrisEnabled');
+  if (toggleQris) c.digitalEnvelope.qrisEnabled = toggleQris.checked;
+  updateAdminQrisPreview(c.digitalEnvelope.qrisImageUrl, c.digitalEnvelope.qrisEnabled);
 
   saveConfig(c);
 }
@@ -1198,19 +1775,50 @@ function setupAdminFileUploads() {
     });
   }
 
-  // QRIS Image
+  // QRIS Image Upload
   const editQris = document.getElementById('editQrisFile');
   if (editQris) {
     editQris.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (file) {
         readFileAsDataUrl(file, (dataUrl) => {
+          if (!weddingConfig.digitalEnvelope) weddingConfig.digitalEnvelope = {};
           weddingConfig.digitalEnvelope.qrisImageUrl = dataUrl;
+          weddingConfig.digitalEnvelope.qrisEnabled = true;
+          const toggleQris = document.getElementById('toggleQrisEnabled');
+          if (toggleQris) toggleQris.checked = true;
+          updateAdminQrisPreview(dataUrl, true);
           saveConfig(weddingConfig);
         });
       }
     });
   }
+
+  // Remove / Disable QRIS
+  const btnRemoveQris = document.getElementById('btnRemoveQris');
+  if (btnRemoveQris) {
+    btnRemoveQris.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!weddingConfig.digitalEnvelope) weddingConfig.digitalEnvelope = {};
+      weddingConfig.digitalEnvelope.qrisImageUrl = '';
+      weddingConfig.digitalEnvelope.qrisEnabled = false;
+      const toggleQris = document.getElementById('toggleQrisEnabled');
+      if (toggleQris) toggleQris.checked = false;
+      if (editQris) editQris.value = '';
+      updateAdminQrisPreview('', false);
+      saveConfig(weddingConfig);
+    });
+  }
+
+  // Live toggles for Bank, DANA, QRIS in Admin Panel
+  ['toggleBankEnabled', 'toggleDanaEnabled', 'toggleQrisEnabled'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        collectAdminFieldsAndSave();
+      });
+    }
+  });
 
   // Add Photo to Gallery via File
   const addGalPhoto = document.getElementById('inputAddGalleryPhoto');
@@ -1523,12 +2131,13 @@ function renderAdminWishes() {
   weddingWishes.forEach((w) => {
     const item = document.createElement('div');
     item.className = 'p-3 bg-stone-950 border border-stone-800 rounded-xl flex items-start justify-between gap-3 transition hover:border-stone-700';
+    const displayTime = formatWishTime(w);
     item.innerHTML = `
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <strong class="text-xs text-amber-200">${escapeHtml(w.guestName)}</strong>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-300">${w.rsvp || 'Hadir'}</span>
-          <span class="text-[10px] text-stone-500">${w.timestamp || ''}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-300">${escapeHtml(w.rsvp || 'Hadir')}</span>
+          <span class="text-[10px] text-stone-400">${escapeHtml(displayTime)}</span>
         </div>
         <p class="text-xs text-stone-300 mt-1 leading-relaxed break-words">${escapeHtml(w.message)}</p>
         ${w.photoUrl ? `<div class="mt-2"><img src="${w.photoUrl}" class="w-12 h-12 object-cover rounded border border-stone-700" /></div>` : ''}
@@ -1568,3 +2177,148 @@ function renderAdminWishes() {
     });
   });
 }
+
+// ================= DEXXDIGITAL DEVELOPER CONSOLE LOGIC =================
+function setupDevPortalLogic() {
+  const btnClose = document.getElementById('btnCloseDevPortal');
+  if (btnClose) btnClose.addEventListener('click', closeDevPortal);
+
+  const formLogin = document.getElementById('formDevLogin');
+  const loginSection = document.getElementById('devLoginSection');
+  const dashSection = document.getElementById('devDashboardSection');
+  const errorMsg = document.getElementById('devLoginErrorMsg');
+  const noticeBox = document.getElementById('devSaveNotice');
+  const noticeText = document.getElementById('devSaveNoticeText');
+
+  function showDevNotice(msg) {
+    if (noticeBox && noticeText) {
+      noticeText.innerText = msg;
+      noticeBox.classList.remove('hidden');
+      setTimeout(() => noticeBox.classList.add('hidden'), 4000);
+    }
+  }
+
+  // Developer Login
+  if (formLogin) {
+    formLogin.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const enteredPass = document.getElementById('devPassInput')?.value?.trim();
+      const masterPass = localStorage.getItem('dexxdigital_master_pass') || 'dexx123';
+
+      if (enteredPass === masterPass) {
+        if (errorMsg) errorMsg.classList.add('hidden');
+        if (loginSection) loginSection.classList.add('hidden');
+        if (dashSection) dashSection.classList.remove('hidden');
+        populateDevFields();
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+      }
+    });
+  }
+
+  function populateDevFields() {
+    const dev = weddingConfig.developerContact || {};
+    const clientPass = localStorage.getItem('dexxdigital_admin_pass') || 'admin123';
+
+    const inputClientPass = document.getElementById('devClientPass');
+    if (inputClientPass) inputClientPass.value = clientPass;
+
+    const inputName = document.getElementById('devAgencyName');
+    if (inputName) inputName.value = dev.agencyName || 'DexxDigital';
+
+    const inputTagline = document.getElementById('devTagline');
+    if (inputTagline) inputTagline.value = dev.tagline || 'Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif';
+
+    const inputWa = document.getElementById('devWhatsapp');
+    if (inputWa) inputWa.value = dev.whatsapp || '6281234567890';
+
+    const inputIg = document.getElementById('devInstagram');
+    if (inputIg) inputIg.value = dev.instagram || '';
+
+    const inputTiktok = document.getElementById('devTiktok');
+    if (inputTiktok) inputTiktok.value = dev.tiktok || '';
+
+    const inputShopee = document.getElementById('devShopee');
+    if (inputShopee) inputShopee.value = dev.shopee || '';
+  }
+
+  // 1. Simpan Sandi Admin Klien
+  const btnSaveClientPass = document.getElementById('btnSaveClientPass');
+  if (btnSaveClientPass) {
+    btnSaveClientPass.addEventListener('click', () => {
+      const newP = document.getElementById('devClientPass')?.value?.trim();
+      if (newP && newP.length >= 6) {
+        localStorage.setItem('dexxdigital_admin_pass', newP);
+
+        // Sync to Firebase Firestore
+        if (firestoreDb) {
+          try {
+            firestoreDb.collection('wedding_data').doc('admin_security').set({
+              password: newP,
+              email: localStorage.getItem('dexxdigital_admin_email') || 'admin@wedding.com',
+              updatedBy: 'DexxDigital Developer Console',
+              updatedAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
+                ? firebase.firestore.FieldValue.serverTimestamp()
+                : new Date()
+            }).catch(err => console.warn('Firestore password sync notice:', err));
+          } catch (e) {}
+        }
+
+        showDevNotice(`Sandi admin klien berhasil diperbarui menjadi "${newP}"!`);
+      } else {
+        alert('Sandi admin klien minimal 6 karakter!');
+      }
+    });
+  }
+
+  // 2. Simpan Profil & Medsos Developer
+  const btnSaveDevProfile = document.getElementById('btnSaveDevProfile');
+  if (btnSaveDevProfile) {
+    btnSaveDevProfile.addEventListener('click', () => {
+      const name = document.getElementById('devAgencyName')?.value?.trim() || 'DexxDigital';
+      const tagline = document.getElementById('devTagline')?.value?.trim() || '';
+      const wa = document.getElementById('devWhatsapp')?.value?.trim() || '6281234567890';
+      const ig = document.getElementById('devInstagram')?.value?.trim() || '';
+      const tt = document.getElementById('devTiktok')?.value?.trim() || '';
+      const shopee = document.getElementById('devShopee')?.value?.trim() || '';
+
+      weddingConfig.developerContact = {
+        agencyName: name,
+        tagline: tagline,
+        whatsapp: wa,
+        instagram: ig,
+        tiktok: tt,
+        shopee: shopee
+      };
+
+      saveConfig(weddingConfig);
+      showDevNotice('Profil agensi & link media sosial DexxDigital berhasil disimpan!');
+    });
+  }
+
+  // 3. Simpan Sandi Master Developer
+  const btnSaveMasterPass = document.getElementById('btnSaveMasterPass');
+  if (btnSaveMasterPass) {
+    btnSaveMasterPass.addEventListener('click', () => {
+      const newMaster = document.getElementById('devNewMasterPass')?.value?.trim();
+      if (newMaster && newMaster.length >= 6) {
+        localStorage.setItem('dexxdigital_master_pass', newMaster);
+        document.getElementById('devNewMasterPass').value = '';
+        showDevNotice('Sandi master developer berhasil diperbarui!');
+      } else {
+        alert('Sandi master developer minimal 6 karakter!');
+      }
+    });
+  }
+
+  // Developer Logout
+  const btnDevLogout = document.getElementById('btnDevLogout');
+  if (btnDevLogout) {
+    btnDevLogout.addEventListener('click', () => {
+      if (dashSection) dashSection.classList.add('hidden');
+      if (loginSection) loginSection.classList.remove('hidden');
+      closeDevPortal();
+    });
+  }
+}
+
