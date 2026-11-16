@@ -11,10 +11,8 @@
   
   <!-- Tailwind CSS CDN for zero-build standalone HTML architecture -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDK Compat CDN (Vanilla JS, Zero Build, Standalone GitHub Pages Ready) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <!-- Firebase Modular SDK (npm install firebase) -->
+  <script type="module" src="assets/js/firebase.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -108,7 +106,7 @@
               Arina <span class="text-amber-400 font-script text-5xl">&amp;</span> Bagas
             </h1>
             <p id="textHeroDate" class="text-xs tracking-widest text-amber-200 mt-2 font-cinzel">
-              Rabu, 30 Desember 2026
+              Rabu, 30 Desember 2028
             </p>
           </div>
         </div>
@@ -246,7 +244,7 @@
                 <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
                 <span>Akad Nikah</span>
               </span>
-              <h4 id="akadDate" class="text-2xl font-serif text-amber-100">Rabu, 30 Desember 2026</h4>
+              <h4 id="akadDate" class="text-2xl font-serif text-amber-100">Rabu, 30 Desember 2028</h4>
               <div class="space-y-2 text-xs text-stone-300">
                 <p id="akadTime" class="flex items-center gap-2">
                   <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -274,7 +272,7 @@
                 <svg class="w-3.5 h-3.5 text-rose-400 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 <span>Resepsi Pernikahan</span>
               </span>
-              <h4 id="resepsiDate" class="text-2xl font-serif text-amber-100">Kamis, 31 Desember 2026</h4>
+              <h4 id="resepsiDate" class="text-2xl font-serif text-amber-100">Kamis, 31 Desember 2029</h4>
               <div class="space-y-2 text-xs text-stone-300">
                 <p id="resepsiTime" class="flex items-center gap-2">
                   <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -597,6 +595,7 @@
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-quote">Ayat &amp; Kutipan Doa</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-events">Acara &amp; Tanggal</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-gallery">Galeri Foto (File)</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-music">Lagu &amp; Musik</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-envelope">DANA &amp; QRIS</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-wishes">Moderasi Buku Tamu</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-firebase">
@@ -811,6 +810,69 @@
             </div>
           </div>
 
+          <!-- TAB: LAGU & MUSIK LATAR -->
+          <div id="tab-music" class="tab-pane hidden space-y-5">
+            <div class="flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-stone-800">
+              <div>
+                <h4 class="text-base font-semibold text-amber-100 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                  <span>Pengaturan Lagu &amp; Musik Undangan</span>
+                </h4>
+                <p class="text-xs text-stone-400 mt-1">
+                  Ganti lagu latar belakang undangan menggunakan tautan URL MP3 atau unggah file audio langsung dari perangkat Anda.
+                </p>
+              </div>
+              <label class="inline-flex items-center gap-2 text-xs text-stone-200 cursor-pointer select-none bg-stone-950/70 px-3 py-2 rounded-xl border border-stone-800">
+                <input id="toggleMusicEnabled" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer" />
+                <span>Aktifkan Musik</span>
+              </label>
+            </div>
+
+            <div id="adminMusicNotice" class="hidden p-3 rounded-xl text-xs bg-emerald-950/80 border border-emerald-500/40 text-emerald-200"></div>
+
+            <!-- 1. Preview Audio Saat Ini -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <span class="text-[10px] uppercase tracking-wider text-stone-400 block">Lagu Aktif Saat Ini:</span>
+                  <strong id="adminMusicCurrentTitle" class="text-sm text-amber-200 font-serif">Romantic Wedding Piano</strong>
+                </div>
+                <span id="adminMusicStatus" class="text-[11px] px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300">Musik Aktif</span>
+              </div>
+              <audio id="adminMusicPreview" controls preload="metadata" class="w-full h-10 rounded-lg"></audio>
+            </div>
+
+            <!-- 2. Edit Judul & Link URL Lagu -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">1. Ubah Judul &amp; Link URL Lagu (MP3 / Audio)</h5>
+              <div>
+                <label for="editMusicTitle" class="block text-[11px] text-stone-400 mb-1">Judul Lagu (Label Admin):</label>
+                <input id="editMusicTitle" type="text" placeholder="Contoh: Instrumen Piano Pernikahan" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100" />
+              </div>
+              <div>
+                <label for="editMusicUrl" class="block text-[11px] text-stone-400 mb-1">URL Audio Langsung (.mp3 / .ogg / .wav / GitHub raw):</label>
+                <input id="editMusicUrl" type="text" placeholder="https://.../lagu-pernikahan.mp3" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100 font-mono" />
+              </div>
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <button id="btnApplyMusic" type="button" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl text-xs font-medium transition cursor-pointer shadow">
+                  Terapkan &amp; Simpan Lagu
+                </button>
+                <button id="btnResetDefaultMusic" type="button" class="px-3.5 py-2 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-300 rounded-xl text-xs font-medium transition cursor-pointer">
+                  Reset ke Lagu Awal
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Upload File Audio dari Perangkat -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-2.5">
+              <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">2. Unggah File Lagu dari Perangkat (MP3 / WAV / OGG / M4A)</h5>
+              <p class="text-[11px] text-stone-400 leading-relaxed">
+                Pilih file lagu langsung dari HP atau laptop Anda (maksimal <strong>15 MB</strong>). File akan tersimpan otomatis dan langsung menggantikan lagu lama.
+              </p>
+              <input id="editMusicFile" type="file" accept="audio/*" class="block w-full text-xs text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-amber-600 file:text-white cursor-pointer" />
+            </div>
+          </div>
+
           <!-- TAB: ENVELOPE (BANK, DANA & QRIS) -->
           <div id="tab-envelope" class="tab-pane hidden space-y-5">
             <div class="pb-2 border-b border-stone-800">
@@ -936,18 +998,18 @@
             <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span id="firebaseStatusDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span id="firebaseStatusText" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    Firebase Firestore Aktif
+                  <span id="firebaseStatusDot" class="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span id="firebaseStatusText" class="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    Menghubungkan ke Firebase (wedding-d0f83)...
                   </span>
                 </div>
-                <span class="text-[11px] text-stone-400 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">web-wedding-4d4ce</span>
+                <span class="text-[11px] text-stone-400 font-mono bg-stone-900 px-2 py-0.5 rounded border border-stone-800">wedding-d0f83</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-stone-300">
                 <div class="p-2.5 bg-stone-900/50 rounded-xl border border-stone-800/80">
                   <span class="text-[10px] text-stone-400 block mb-0.5">Project ID:</span>
-                  <strong class="text-amber-200 font-mono">web-wedding-4d4ce</strong>
+                  <strong class="text-amber-200 font-mono">wedding-d0f83</strong>
                 </div>
                 <div class="p-2.5 bg-stone-900/50 rounded-xl border border-stone-800/80">
                   <span class="text-[10px] text-stone-400 block mb-0.5">Koleksi Firestore:</span>
@@ -975,7 +1037,7 @@
             <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
               <div class="flex items-center justify-between">
                 <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Panduan Aturan Keamanan (Firestore Rules)</h5>
-                <a href="https://console.firebase.google.com/project/web-wedding-4d4ce/firestore/rules" target="_blank" rel="noreferrer" class="text-[11px] text-amber-400 hover:underline flex items-center gap-1">
+                <a href="https://console.firebase.google.com/project/wedding-d0f83/firestore/rules" target="_blank" rel="noreferrer" class="text-[11px] text-amber-400 hover:underline flex items-center gap-1">
                   <span>Buka Firebase Console</span>
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 </a>
@@ -1246,8 +1308,8 @@ service cloud.firestore {
   </div>
 
   <!-- Master Configuration (GitHub Pages & Multi-Device Sync Ready) -->
-  <script src="assets/js/config.js?v=2.2"></script>
+  <script src="assets/js/config.js?v=2.3"></script>
   <!-- Pure Vanilla JavaScript Application Logic -->
-  <script src="assets/js/app.js?v=2.2"></script>
+  <script src="assets/js/app.js?v=2.3"></script>
 </body>
 </html>

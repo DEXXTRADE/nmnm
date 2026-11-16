@@ -20,9 +20,58 @@ async function startServer() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
+  const audioDir = path.resolve(__dirname, 'assets/audio');
+  if (!fs.existsSync(audioDir)) {
+    fs.mkdirSync(audioDir, { recursive: true });
+  }
+
+  // Always serve uploaded audio files immediately in both dev and production
+  app.use('/assets/audio', express.static(audioDir));
+
   const configPath = path.resolve(dataDir, 'config.json');
   const wishesPath = path.resolve(dataDir, 'wishes.json');
   const configJsPath = path.resolve(__dirname, 'assets/js/config.js');
+  const distConfigJsPath = path.resolve(__dirname, 'dist/assets/js/config.js');
+  const distAudioDir = path.resolve(__dirname, 'dist/assets/audio');
+
+  // API 0: Upload custom audio file (MP3/WAV/OGG/M4A up to 15MB)
+  app.post('/api/upload-audio', (req, res) => {
+    try {
+      const { fileName, dataUrl } = req.body || {};
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.includes(';base64,')) {
+        return res.status(400).json({ error: 'Format file audio tidak valid' });
+      }
+      const [meta, base64Data] = dataUrl.split(';base64,');
+      const mimeMatch = meta.match(/^data:([^;]+)/);
+      const mime = mimeMatch ? mimeMatch[1].toLowerCase() : 'audio/mpeg';
+
+      let ext = 'mp3';
+      if (fileName && String(fileName).includes('.')) {
+        const rawExt = String(fileName).split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (['mp3', 'wav', 'ogg', 'm4a', 'aac', 'webm'].includes(rawExt)) ext = rawExt;
+      } else if (mime.includes('wav')) ext = 'wav';
+      else if (mime.includes('ogg')) ext = 'ogg';
+      else if (mime.includes('mp4') || mime.includes('m4a')) ext = 'm4a';
+
+      const safeFileName = `wedding-music-${Date.now()}.${ext}`;
+      const buffer = Buffer.from(base64Data, 'base64');
+      const destPath = path.resolve(audioDir, safeFileName);
+      fs.writeFileSync(destPath, buffer);
+
+      if (fs.existsSync(path.resolve(__dirname, 'dist/assets'))) {
+        if (!fs.existsSync(distAudioDir)) fs.mkdirSync(distAudioDir, { recursive: true });
+        fs.writeFileSync(path.resolve(distAudioDir, safeFileName), buffer);
+      }
+
+      return res.json({
+        success: true,
+        url: `assets/audio/${safeFileName}`
+      });
+    } catch (e) {
+      console.error('Error uploading audio:', e);
+      return res.status(500).json({ error: 'Gagal menyimpan file audio' });
+    }
+  });
 
   // API 1: Get Config (Shared across all devices)
   app.get('/api/config', (req, res) => {
@@ -67,9 +116,12 @@ async function startServer() {
       // Write to data/config.json
       fs.writeFileSync(configPath, JSON.stringify(merged, null, 2), 'utf-8');
 
-      // Also automatically update assets/js/config.js so GitHub Pages deployment is always up-to-date
+      // Also automatically update assets/js/config.js (and dist/assets/js/config.js if present)
       const jsContent = `/**\n * The Wedding of ${merged.bride?.nickName || 'Arina'} & ${merged.groom?.nickName || 'Bagas'} - Master Configuration File\n * Commercial Grade - Developed by DexxDigital\n * Auto-synced from Admin Panel\n */\n\nwindow.WEDDING_CONFIG = ${JSON.stringify(merged, null, 2)};\n`;
       fs.writeFileSync(configJsPath, jsContent, 'utf-8');
+      if (fs.existsSync(path.dirname(distConfigJsPath))) {
+        fs.writeFileSync(distConfigJsPath, jsContent, 'utf-8');
+      }
 
       return res.json({ success: true, message: 'Config synced successfully across all devices' });
     } catch (e) {

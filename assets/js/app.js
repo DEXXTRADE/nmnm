@@ -64,6 +64,8 @@ const DEFAULT_CONFIG = {
     qrisEnabled: true,
     qrisImageUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DANA-ARINA-BAGAS-WEDDING',
   },
+  musicEnabled: true,
+  musicTitle: 'Romantic Wedding Piano',
   musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-piano-112191.mp3',
   developerContact: {
     agencyName: 'DexxDigital',
@@ -111,40 +113,34 @@ const INITIAL_WISHES = [
   }
 ];
 
-// Firebase Client Configuration (User Provided Cloud Project: web-wedding-4d4ce)
-const firebaseConfig = {
-  apiKey: "AIzaSyDmLSvUrOw0U_aLNkctFMKKo5AavJCHYc4",
-  authDomain: "web-wedding-4d4ce.firebaseapp.com",
-  projectId: "web-wedding-4d4ce",
-  storageBucket: "web-wedding-4d4ce.firebasestorage.app",
-  messagingSenderId: "904409888717",
-  appId: "1:904409888717:web:5d92101d2ce28ddc067684",
-  measurementId: "G-F71CLB6L66"
-};
+const ACTIVE_FIREBASE_PROJECT_ID = 'wedding-d0f83';
+const FIREBASE_PROJECT_STORAGE_KEY = 'dexxdigital_firebase_project';
 
-// Initialize Firebase SDK
-let firebaseApp = null;
-let firestoreDb = null;
-let firebaseAnalytics = null;
+// Reset cached config & wishes when switching to the fresh wedding-d0f83 project
+try {
+  if (localStorage.getItem(FIREBASE_PROJECT_STORAGE_KEY) !== ACTIVE_FIREBASE_PROJECT_ID) {
+    localStorage.removeItem('dexxdigital_wedding_config');
+    localStorage.removeItem('dexxdigital_wedding_wishes');
+    localStorage.setItem(FIREBASE_PROJECT_STORAGE_KEY, ACTIVE_FIREBASE_PROJECT_ID);
+  }
+} catch (e) {}
+
+// Modular Firebase State & Helpers (provided by assets/js/firebase.js via npm firebase)
 let isFirebaseConnected = false;
+let isFirebaseSyncBound = false;
+let isInitialSeedingFirebase = false;
+let isSavingConfigToCloud = false;
 let unsubscribeFirebaseConfig = null;
 let unsubscribeFirebaseWishes = null;
 
-try {
-  if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-    if (!firebase.apps || !firebase.apps.length) {
-      firebaseApp = firebase.initializeApp(firebaseConfig);
-    } else {
-      firebaseApp = firebase.app();
-    }
-    firestoreDb = firebase.firestore();
-    if (typeof firebase.analytics === 'function') {
-      try { firebaseAnalytics = firebase.analytics(); } catch (e) {}
-    }
-    console.log('[DexxDigital] Firebase initialized for project:', firebaseConfig.projectId);
-  }
-} catch (err) {
-  console.warn('[DexxDigital] Firebase init notice:', err);
+function getFirebaseBridge() {
+  return (typeof window !== 'undefined' && window.DEXX_FIREBASE && window.DEXX_FIREBASE.db)
+    ? window.DEXX_FIREBASE
+    : null;
+}
+
+function sanitizeForFirestore(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
 // App State
@@ -166,7 +162,7 @@ function updateFirebaseUIStatus(active, msg) {
   }
   if (txt) {
     txt.className = active ? 'text-xs font-bold text-emerald-400 uppercase tracking-wider' : 'text-xs font-bold text-amber-400 uppercase tracking-wider';
-    txt.innerText = active ? 'Firebase Firestore Aktif & Terhubung' : 'Firebase Menunggu Konfigurasi Rules';
+    txt.innerText = active ? 'Firebase Firestore Aktif & Terhubung' : 'Firebase Menunggu Aktivasi / Rules';
   }
   if (box && msg) {
     box.className = active
@@ -174,6 +170,50 @@ function updateFirebaseUIStatus(active, msg) {
       : 'p-3 rounded-xl text-xs bg-amber-950/80 border border-amber-500/40 text-amber-200';
     box.innerText = msg;
     box.classList.remove('hidden');
+  }
+}
+
+function withPromiseTimeout(promise, ms, timeoutMessage) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(timeoutMessage || 'Waktu koneksi Firestore habis')), ms);
+    })
+  ]);
+}
+
+async function diagnoseFirestoreEndpoint() {
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${ACTIVE_FIREBASE_PROJECT_ID}/databases/(default)/documents/wedding_data/config`
+    );
+    if (res.ok || res.status === 404) {
+      return { ok: true };
+    }
+    const body = await res.json().catch(() => ({}));
+    const rawMsg = body?.error?.message || '';
+    const reason = body?.error?.details?.[0]?.reason || '';
+    if (reason === 'SERVICE_DISABLED' || rawMsg.includes('Cloud Firestore API has not been used')) {
+      return {
+        ok: false,
+        code: 'service-disabled',
+        message: `Firestore Database belum diaktifkan di project "${ACTIVE_FIREBASE_PROJECT_ID}". Buka Firebase Console -> Build -> Firestore Database -> Create Database terlebih dahulu.`
+      };
+    }
+    if (res.status === 403 || body?.error?.status === 'PERMISSION_DENIED') {
+      return {
+        ok: false,
+        code: 'permission-denied',
+        message: `Aturan Firestore Rules project "${ACTIVE_FIREBASE_PROJECT_ID}" masih tertutup. Buka tab Rules di Firebase Console dan atur: allow read, write: if true;`
+      };
+    }
+    return {
+      ok: false,
+      code: 'firestore-error',
+      message: rawMsg || `Firestore merespons status ${res.status}`
+    };
+  } catch (e) {
+    return { ok: false, code: 'network-error', message: 'Tidak dapat menjangkau server Firestore. Periksa koneksi internet.' };
   }
 }
 
@@ -209,66 +249,145 @@ function loadConfig() {
 }
 
 async function saveConfig(cfg) {
+  cfg._localUpdatedAt = Date.now();
   weddingConfig = cfg;
   localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(cfg));
   renderAll();
 
-  // 1. Multi-device cloud sync via Firebase Firestore
-  if (firestoreDb) {
+  // 1. Multi-device sync via backend server FIRST
+  const serverPromise = fetch('/api/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cfg)
+  }).catch((e) => {
+    console.log('[DexxDigital] Local/static fallback: config saved locally', e?.message || '');
+  });
+
+  // 2. Multi-device cloud sync via Modular Firebase Firestore (wedding-d0f83) in parallel
+  const fb = getFirebaseBridge();
+  const firestorePromise = (async () => {
+    if (!fb) return;
+    isSavingConfigToCloud = true;
     try {
-      await firestoreDb.collection('wedding_data').doc('config').set(cfg);
-      updateFirebaseUIStatus(true, 'Data berhasil disimpan & langsung sinkron ke seluruh perangkat via Firestore!');
+      await withPromiseTimeout(
+        fb.setDoc(fb.doc(fb.db, 'wedding_data', 'config'), sanitizeForFirestore(cfg)),
+        8000,
+        'Waktu koneksi Firestore habis'
+      );
+      updateFirebaseUIStatus(true, 'Data berhasil disimpan & langsung sinkron ke seluruh perangkat via Firestore (wedding-d0f83)!');
     } catch (e) {
       console.warn('[DexxDigital] Firestore save notice:', e);
       if (e.code === 'permission-denied') {
-        updateFirebaseUIStatus(false, 'Aturan Firestore diblokir. Harap buka aturan Rules di Firebase Console: allow read, write: if true;');
+        updateFirebaseUIStatus(false, 'Aturan Firestore diblokir. Harap buka aturan Rules di Firebase Console (wedding-d0f83): allow read, write: if true;');
       } else {
-        updateFirebaseUIStatus(false, 'Gagal menyimpan ke Firestore: ' + (e.message || 'Error'));
+        const diag = await diagnoseFirestoreEndpoint();
+        updateFirebaseUIStatus(false, !diag.ok ? diag.message : ('Gagal menyimpan ke Firestore: ' + (e.message || 'Error')));
       }
+    } finally {
+      isSavingConfigToCloud = false;
     }
-  }
+  })();
 
-  // 2. Multi-device cloud sync via backend server (Dev/Node runtime)
+  await Promise.allSettled([serverPromise, firestorePromise]);
+}
+
+async function seedDefaultWishesToFirestore(fb) {
   try {
-    await fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cfg)
+    const wishesCol = fb.collection(fb.db, 'wedding_wishes');
+    const existingSnap = await fb.getDocs(wishesCol);
+    if (!existingSnap.empty) return;
+
+    const batch = fb.writeBatch(fb.db);
+    INITIAL_WISHES.forEach((w) => {
+      const ref = fb.doc(fb.db, 'wedding_wishes', String(w.id));
+      batch.set(ref, {
+        guestName: w.guestName,
+        message: w.message,
+        rsvp: w.rsvp || 'Hadir',
+        photoUrl: w.photoUrl || null,
+        createdAtMs: w.createdAt || Date.now(),
+        createdAt: new Date(w.createdAt || Date.now())
+      });
     });
-  } catch (e) {
-    console.log('[DexxDigital] Local/static fallback: config saved locally');
+    await batch.commit();
+  } catch (err) {
+    console.warn('[DexxDigital] Seed wishes notice:', err);
   }
 }
 
 async function initFirebaseSync() {
-  if (!firestoreDb) return;
+  const fb = getFirebaseBridge();
+  if (!fb) {
+    if (!window._dexxFirebaseListenerAttached) {
+      window._dexxFirebaseListenerAttached = true;
+      window.addEventListener('dexx-firebase-ready', () => {
+        initFirebaseSync();
+      }, { once: true });
+    }
+    return;
+  }
+
+  if (isFirebaseSyncBound) return;
+  isFirebaseSyncBound = true;
+
+  const { db, doc, collection, setDoc, onSnapshot, query, orderBy } = fb;
+
+  // Fast background check so admin UI reflects Firestore activation / Rules state immediately
+  diagnoseFirestoreEndpoint().then((diag) => {
+    if (!diag.ok && !isFirebaseConnected) {
+      updateFirebaseUIStatus(false, diag.message);
+    }
+  });
 
   // 1. Real-time listener for Wedding Configuration
   try {
-    const configDocRef = firestoreDb.collection('wedding_data').doc('config');
-    unsubscribeFirebaseConfig = configDocRef.onSnapshot(async (docSnapshot) => {
-      if (docSnapshot.exists) {
+    const configDocRef = doc(db, 'wedding_data', 'config');
+    unsubscribeFirebaseConfig = onSnapshot(configDocRef, async (docSnapshot) => {
+      if (docSnapshot.exists()) {
         const cloudData = docSnapshot.data();
         if (cloudData && typeof cloudData === 'object') {
+          const localTs = Number(weddingConfig?._localUpdatedAt || 0);
+          const cloudTs = Number(cloudData._localUpdatedAt || 0);
+          if (localTs > 0 && localTs > cloudTs) {
+            if (!isSavingConfigToCloud) {
+              withPromiseTimeout(
+                setDoc(configDocRef, sanitizeForFirestore(weddingConfig)),
+                8000,
+                'Sinkronisasi ulang Firestore timeout'
+              ).catch(() => {});
+            }
+            return;
+          }
           weddingConfig = mergeWithDefaults(cloudData);
           localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(weddingConfig));
           renderAll();
           populateAdminFields();
-          updateFirebaseUIStatus(true, 'Sinkronisasi Real-Time Aktif (web-wedding-4d4ce)');
+          updateFirebaseUIStatus(true, 'Sinkronisasi Real-Time Aktif (wedding-d0f83)');
         }
       } else {
-        // First run auto-seed to Firestore
+        // First run auto-seed clean initial config & wishes to Firestore (wedding-d0f83)
         try {
-          await configDocRef.set(weddingConfig);
-          updateFirebaseUIStatus(true, 'Data pernikahan berhasil diunggah awal ke Firestore.');
+          isInitialSeedingFirebase = true;
+          await setDoc(configDocRef, sanitizeForFirestore(weddingConfig));
+          await seedDefaultWishesToFirestore(fb);
+          updateFirebaseUIStatus(true, 'Data awal & foto setelan awal berhasil disinkronkan ke Firestore (wedding-d0f83).');
         } catch (seedErr) {
           console.warn('[DexxDigital] Auto-seed Firestore notice:', seedErr);
+          if (seedErr?.code === 'permission-denied') {
+            updateFirebaseUIStatus(false, 'Aturan Firestore ditolak. Buka Firebase Console (wedding-d0f83) -> Rules dan atur: allow read, write: if true;');
+          }
+        } finally {
+          isInitialSeedingFirebase = false;
         }
       }
     }, (error) => {
       console.warn('[DexxDigital] Firestore config listener:', error.message);
       if (error.code === 'permission-denied') {
-        updateFirebaseUIStatus(false, 'Aturan Firestore ditolak. Buka Firebase Console -> Rules dan atur: allow read, write: if true;');
+        updateFirebaseUIStatus(false, 'Aturan Firestore ditolak. Buka Firebase Console (wedding-d0f83) -> Rules dan atur: allow read, write: if true;');
+      } else {
+        diagnoseFirestoreEndpoint().then((diag) => {
+          if (!diag.ok) updateFirebaseUIStatus(false, diag.message);
+        });
       }
     });
   } catch (err) {
@@ -277,15 +396,15 @@ async function initFirebaseSync() {
 
   // 2. Real-time listener for Guestbook Wishes & Photos
   try {
-    const wishesCollRef = firestoreDb.collection('wedding_wishes').orderBy('createdAt', 'desc');
-    unsubscribeFirebaseWishes = wishesCollRef.onSnapshot((querySnapshot) => {
+    const wishesQuery = query(collection(db, 'wedding_wishes'), orderBy('createdAt', 'desc'));
+    unsubscribeFirebaseWishes = onSnapshot(wishesQuery, (querySnapshot) => {
       if (!querySnapshot.empty) {
         const cloudWishes = [];
-        querySnapshot.forEach((doc) => {
-          const d = doc.data();
-          const resolvedMs = parseTimestampMs(d.createdAt, null) || parseTimestampMs(d.createdAtMs, doc.id);
+        querySnapshot.forEach((docSnap) => {
+          const d = docSnap.data();
+          const resolvedMs = parseTimestampMs(d.createdAt, null) || parseTimestampMs(d.createdAtMs, docSnap.id);
           cloudWishes.push({
-            id: doc.id,
+            id: docSnap.id,
             guestName: d.guestName || 'Tamu',
             message: d.message || '',
             createdAt: resolvedMs || Date.now(),
@@ -295,6 +414,12 @@ async function initFirebaseSync() {
           });
         });
         weddingWishes = cloudWishes;
+        localStorage.setItem('dexxdigital_wedding_wishes', JSON.stringify(weddingWishes));
+        renderWishes();
+        renderAdminWishes();
+      } else if (!querySnapshot.metadata?.fromCache && !isInitialSeedingFirebase) {
+        // Reflect empty wishes list across devices when all wishes are cleared
+        weddingWishes = [];
         localStorage.setItem('dexxdigital_wedding_wishes', JSON.stringify(weddingWishes));
         renderWishes();
         renderAdminWishes();
@@ -308,9 +433,9 @@ async function initFirebaseSync() {
 
   // 3. Real-time sync for Admin Security Password
   try {
-    firestoreDb.collection('wedding_data').doc('admin_security').onSnapshot((doc) => {
-      if (doc.exists) {
-        const sec = doc.data();
+    onSnapshot(doc(db, 'wedding_data', 'admin_security'), (docSnap) => {
+      if (docSnap.exists()) {
+        const sec = docSnap.data();
         if (sec.password) {
           localStorage.setItem('dexxdigital_admin_pass', sec.password);
         }
@@ -323,22 +448,33 @@ async function initFirebaseSync() {
 }
 
 async function syncFromServer() {
-  // Sync from server API as resilient backup
+  // Sync from server API as resilient backup (respect newer local timestamp)
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch('/api/config?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const serverCfg = await res.json();
       if (serverCfg && serverCfg.bride) {
-        weddingConfig = mergeWithDefaults(serverCfg);
-        localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(weddingConfig));
-        renderAll();
-        populateAdminFields();
+        const localTs = Number(weddingConfig?._localUpdatedAt || 0);
+        const serverTs = Number(serverCfg._localUpdatedAt || 0);
+        if (localTs > 0 && localTs > serverTs) {
+          // Local changes are newer than server copy; push local up instead of reverting
+          fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(weddingConfig)
+          }).catch(() => {});
+        } else {
+          weddingConfig = mergeWithDefaults(serverCfg);
+          localStorage.setItem('dexxdigital_wedding_config', JSON.stringify(weddingConfig));
+          renderAll();
+          populateAdminFields();
+        }
       }
     }
   } catch (e) {}
 
   try {
-    const resWishes = await fetch('/api/wishes');
+    const resWishes = await fetch('/api/wishes?t=' + Date.now(), { cache: 'no-store' });
     if (resWishes.ok) {
       const serverWishes = await resWishes.json();
       if (Array.isArray(serverWishes) && serverWishes.length > 0) {
@@ -589,17 +725,129 @@ function updateCountdown() {
   }
 }
 
-// Audio Player
+// Audio URL Normalizer (mendukung link langsung, Google Drive, Dropbox, GitHub blob)
+function normalizeAudioUrl(rawUrl) {
+  const url = String(rawUrl || '').trim();
+  if (!url) return '';
+
+  // Google Drive share link -> direct download/stream link
+  const gdriveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (gdriveFileMatch && gdriveFileMatch[1]) {
+    return `https://drive.google.com/uc?export=download&id=${gdriveFileMatch[1]}`;
+  }
+  const gdriveOpenMatch = url.match(/drive\.google\.com\/(?:open|uc)\?[^#]*id=([a-zA-Z0-9_-]+)/);
+  if (gdriveOpenMatch && gdriveOpenMatch[1] && !url.includes('export=download')) {
+    return `https://drive.google.com/uc?export=download&id=${gdriveOpenMatch[1]}`;
+  }
+
+  // Dropbox share link -> direct raw audio
+  if (url.includes('dropbox.com/')) {
+    if (url.includes('dl=0')) return url.replace('dl=0', 'raw=1');
+    if (!url.includes('raw=1')) return url + (url.includes('?') ? '&raw=1' : '?raw=1');
+  }
+
+  // GitHub blob link -> raw.githubusercontent.com
+  const githubBlobMatch = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  if (githubBlobMatch) {
+    return `https://raw.githubusercontent.com/${githubBlobMatch[1]}/${githubBlobMatch[2]}/${githubBlobMatch[3]}`;
+  }
+
+  return url;
+}
+
+// Audio Player & Live Source Sync
+function syncAudioSource() {
+  const audio = document.getElementById('weddingAudio');
+  const btn = document.getElementById('btnMusicToggle');
+  const iconPlay = document.getElementById('iconMusicPlay');
+  const iconMute = document.getElementById('iconMusicMute');
+  if (!audio) return;
+
+  const musicUrl = normalizeAudioUrl(weddingConfig?.musicUrl || '');
+  const isEnabled = weddingConfig?.musicEnabled !== false && Boolean(musicUrl);
+  const musicTitle = (weddingConfig?.musicTitle || 'Lagu Pernikahan').trim();
+
+  if (btn) {
+    btn.classList.toggle('hidden', !isEnabled);
+    btn.setAttribute('title', `Audio Kontrol: ${musicTitle}`);
+    btn.setAttribute('aria-label', `Audio Kontrol: ${musicTitle}`);
+  }
+
+  if (!isEnabled) {
+    if (!audio.paused) audio.pause();
+    audio.removeAttribute('src');
+    delete audio.dataset.currentMusicUrl;
+    audio.load();
+    isMusicPlaying = false;
+    if (iconPlay) iconPlay.classList.add('hidden');
+    if (iconMute) iconMute.classList.remove('hidden');
+    if (btn) {
+      btn.classList.remove('bg-amber-600/80', 'text-white');
+      btn.classList.add('bg-black/60', 'text-stone-300');
+    }
+    return;
+  }
+
+  if (audio.dataset.currentMusicUrl !== musicUrl) {
+    const wasPlaying = isMusicPlaying || !audio.paused;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    audio.dataset.currentMusicUrl = musicUrl;
+    audio.src = musicUrl;
+    audio.load();
+    if (wasPlaying) {
+      audio.play().then(() => {
+        isMusicPlaying = true;
+        if (iconPlay) iconPlay.classList.remove('hidden');
+        if (iconMute) iconMute.classList.add('hidden');
+        if (btn) {
+          btn.classList.add('bg-amber-600/80', 'text-white');
+          btn.classList.remove('bg-black/60', 'text-stone-300');
+        }
+      }).catch(() => {
+        isMusicPlaying = false;
+        if (iconPlay) iconPlay.classList.add('hidden');
+        if (iconMute) iconMute.classList.remove('hidden');
+        if (btn) {
+          btn.classList.remove('bg-amber-600/80', 'text-white');
+          btn.classList.add('bg-black/60', 'text-stone-300');
+        }
+      });
+    }
+  }
+}
+
 function setupAudio() {
   const audio = document.getElementById('weddingAudio');
+  const preview = document.getElementById('adminMusicPreview');
   const btn = document.getElementById('btnMusicToggle');
   const iconPlay = document.getElementById('iconMusicPlay');
   const iconMute = document.getElementById('iconMusicMute');
 
   if (!audio || !btn) return;
-  audio.src = weddingConfig.musicUrl;
+  syncAudioSource();
+
+  // Pause main invitation audio whenever admin preview is played
+  if (preview && !preview._boundAudioExclusive) {
+    preview._boundAudioExclusive = true;
+    preview.addEventListener('play', () => {
+      if (!audio.paused) {
+        audio.pause();
+        isMusicPlaying = false;
+        if (iconPlay) iconPlay.classList.add('hidden');
+        if (iconMute) iconMute.classList.remove('hidden');
+        btn.classList.remove('bg-amber-600/80', 'text-white');
+        btn.classList.add('bg-black/60', 'text-stone-300');
+      }
+    });
+  }
 
   btn.addEventListener('click', () => {
+    const musicUrl = normalizeAudioUrl(weddingConfig?.musicUrl || '');
+    if (weddingConfig?.musicEnabled === false || !musicUrl) return;
+    syncAudioSource();
+
     if (isMusicPlaying) {
       audio.pause();
       isMusicPlaying = false;
@@ -608,6 +856,7 @@ function setupAudio() {
       btn.classList.remove('bg-amber-600/80', 'text-white');
       btn.classList.add('bg-black/60', 'text-stone-300');
     } else {
+      if (preview && !preview.paused) preview.pause();
       audio.play().then(() => {
         isMusicPlaying = true;
         iconPlay.classList.remove('hidden');
@@ -623,11 +872,15 @@ function setupAudio() {
 
 function startMusicOnOpen() {
   const audio = document.getElementById('weddingAudio');
+  const preview = document.getElementById('adminMusicPreview');
   const btn = document.getElementById('btnMusicToggle');
   const iconPlay = document.getElementById('iconMusicPlay');
   const iconMute = document.getElementById('iconMusicMute');
+  const musicUrl = normalizeAudioUrl(weddingConfig?.musicUrl || '');
 
-  if (audio) {
+  if (audio && weddingConfig?.musicEnabled !== false && musicUrl) {
+    if (preview && !preview.paused) preview.pause();
+    syncAudioSource();
     audio.play().then(() => {
       isMusicPlaying = true;
       if (iconPlay) iconPlay.classList.remove('hidden');
@@ -1027,6 +1280,7 @@ function renderAll() {
   renderGallery();
   renderWishes();
   updateCountdown();
+  syncAudioSource();
 }
 
 // Setup Event Handlers & App Lifecycle
@@ -1186,18 +1440,17 @@ function initApp() {
       weddingWishes.unshift(newWish);
       saveWishes(weddingWishes);
 
-      // 1. Save to Firebase Firestore (Real-time sync to all devices)
-      if (firestoreDb) {
+      // 1. Save to Modular Firebase Firestore (Real-time sync to all devices)
+      const fb = getFirebaseBridge();
+      if (fb) {
         try {
-          firestoreDb.collection('wedding_wishes').add({
+          fb.addDoc(fb.collection(fb.db, 'wedding_wishes'), {
             guestName: gName,
             message: gMsg,
             rsvp: currentRsvpChoice,
             photoUrl: currentGuestPhotoData || null,
             createdAtMs: nowMs,
-            createdAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
-              ? firebase.firestore.FieldValue.serverTimestamp()
-              : new Date(nowMs)
+            createdAt: fb.serverTimestamp ? fb.serverTimestamp() : new Date(nowMs)
           }).catch(err => {
             console.warn('[DexxDigital] Firestore wish add error:', err);
           });
@@ -1368,6 +1621,8 @@ function openAdminPanel() {
 }
 
 function closeAdminPanel() {
+  const preview = document.getElementById('adminMusicPreview');
+  if (preview && !preview.paused) preview.pause();
   const modal = document.getElementById('modalAdmin');
   if (modal) {
     modal.classList.add('hidden');
@@ -1481,14 +1736,13 @@ function setupAdminPanelLogic() {
         localStorage.setItem('dexxdigital_admin_pass', newP);
 
         // Sync password to Firestore
-        if (firestoreDb) {
+        const fb = getFirebaseBridge();
+        if (fb) {
           try {
-            firestoreDb.collection('wedding_data').doc('admin_security').set({
+            fb.setDoc(fb.doc(fb.db, 'wedding_data', 'admin_security'), {
               password: newP,
               email: storedAdminEmail || 'admin@wedding.com',
-              updatedAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
-                ? firebase.firestore.FieldValue.serverTimestamp()
-                : new Date()
+              updatedAt: fb.serverTimestamp ? fb.serverTimestamp() : new Date()
             }).catch(err => console.warn('Firestore password sync notice:', err));
           } catch (e) {}
         }
@@ -1626,9 +1880,68 @@ function populateAdminFields() {
   if (toggleQris) toggleQris.checked = c.digitalEnvelope.qrisEnabled !== false && Boolean(String(currentQrisUrl).trim());
   updateAdminQrisPreview(currentQrisUrl, c.digitalEnvelope.qrisEnabled !== false);
 
+  // Music / Lagu Latar
+  const toggleMusic = document.getElementById('toggleMusicEnabled');
+  if (toggleMusic) toggleMusic.checked = c.musicEnabled !== false;
+  const musicTitleInput = document.getElementById('editMusicTitle');
+  if (musicTitleInput) musicTitleInput.value = c.musicTitle || 'Romantic Wedding Piano';
+  const musicUrlInput = document.getElementById('editMusicUrl');
+  if (musicUrlInput) musicUrlInput.value = c.musicUrl || '';
+  updateAdminMusicPreview(c.musicUrl || '', c.musicTitle || 'Romantic Wedding Piano', c.musicEnabled !== false);
+
   renderAdminGalleryList();
   renderAdminWishes();
   updateCountdown();
+}
+
+function showAdminMusicNotice(msg, isError = false) {
+  const notice = document.getElementById('adminMusicNotice');
+  if (!notice) return;
+  notice.className = isError
+    ? 'p-3 rounded-xl text-xs bg-rose-950/80 border border-rose-500/40 text-rose-200'
+    : 'p-3 rounded-xl text-xs bg-emerald-950/80 border border-emerald-500/40 text-emerald-200';
+  notice.innerText = msg;
+  notice.classList.remove('hidden');
+  setTimeout(() => notice.classList.add('hidden'), 4500);
+}
+
+function updateAdminMusicPreview(musicUrl, musicTitle, isEnabled, localObjectUrl = null) {
+  const preview = document.getElementById('adminMusicPreview');
+  const titleEl = document.getElementById('adminMusicCurrentTitle');
+  const statusEl = document.getElementById('adminMusicStatus');
+  const cleanUrl = normalizeAudioUrl(musicUrl);
+  const previewSrc = localObjectUrl || cleanUrl;
+  const cleanTitle = String(musicTitle || '').trim() || (cleanUrl.startsWith('data:audio') || cleanUrl.startsWith('assets/audio/') ? 'File Audio Unggahan' : 'Lagu Pernikahan');
+
+  if (titleEl) titleEl.innerText = cleanUrl || localObjectUrl ? cleanTitle : 'Belum ada lagu';
+  if (preview) {
+    if (previewSrc) {
+      if (preview.dataset.previewUrl !== previewSrc) {
+        preview.pause();
+        preview.dataset.previewUrl = previewSrc;
+        preview.src = previewSrc;
+        preview.load();
+      }
+    } else {
+      preview.pause();
+      preview.removeAttribute('src');
+      delete preview.dataset.previewUrl;
+      preview.load();
+    }
+  }
+  if (statusEl) {
+    if (!cleanUrl && !localObjectUrl) {
+      statusEl.innerText = 'Kosong (Tidak Ada Lagu)';
+      statusEl.className = 'text-[11px] px-2.5 py-1 rounded-full bg-stone-900 border border-stone-700 text-stone-400';
+    } else if (isEnabled === false) {
+      statusEl.innerText = 'Musik Nonaktif';
+      statusEl.className = 'text-[11px] px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-500/30 text-amber-300';
+    } else {
+      const isUploaded = cleanUrl.startsWith('data:audio') || cleanUrl.startsWith('assets/audio/') || Boolean(localObjectUrl);
+      statusEl.innerText = isUploaded ? 'Aktif (File Perangkat)' : 'Aktif (Link URL)';
+      statusEl.className = 'text-[11px] px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300';
+    }
+  }
 }
 
 function updateAdminQrisPreview(qrisUrl, isEnabled) {
@@ -1728,7 +2041,22 @@ function collectAdminFieldsAndSave() {
   if (toggleQris) c.digitalEnvelope.qrisEnabled = toggleQris.checked;
   updateAdminQrisPreview(c.digitalEnvelope.qrisImageUrl, c.digitalEnvelope.qrisEnabled);
 
-  saveConfig(c);
+  // Music / Lagu Latar
+  const toggleMusic = document.getElementById('toggleMusicEnabled');
+  if (toggleMusic) c.musicEnabled = toggleMusic.checked;
+  const musicTitleVal = document.getElementById('editMusicTitle')?.value;
+  if (musicTitleVal !== undefined) c.musicTitle = musicTitleVal.trim() || 'Lagu Pernikahan';
+  const musicUrlInputEl = document.getElementById('editMusicUrl');
+  if (musicUrlInputEl && musicUrlInputEl.value !== undefined) {
+    const normalizedMusicUrl = normalizeAudioUrl(musicUrlInputEl.value);
+    c.musicUrl = normalizedMusicUrl;
+    if (normalizedMusicUrl !== musicUrlInputEl.value.trim()) {
+      musicUrlInputEl.value = normalizedMusicUrl;
+    }
+  }
+  updateAdminMusicPreview(c.musicUrl, c.musicTitle, c.musicEnabled);
+
+  return saveConfig(c);
 }
 
 function setupAdminFileUploads() {
@@ -1810,8 +2138,141 @@ function setupAdminFileUploads() {
     });
   }
 
-  // Live toggles for Bank, DANA, QRIS in Admin Panel
-  ['toggleBankEnabled', 'toggleDanaEnabled', 'toggleQrisEnabled'].forEach((id) => {
+  // Music File Upload (mendukung hingga 15 MB via server /api/upload-audio agar sinkron ke semua perangkat)
+  const editMusicFile = document.getElementById('editMusicFile');
+  if (editMusicFile) {
+    editMusicFile.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const maxServerBytes = 15 * 1024 * 1024;
+      if (file.size > maxServerBytes) {
+        showAdminMusicNotice(
+          'Ukuran file audio melebihi batas maksimal 15 MB. Harap pilih file MP3/M4A/WAV <= 15 MB atau tempel URL MP3 langsung.',
+          true
+        );
+        editMusicFile.value = '';
+        return;
+      }
+
+      const cleanFileName = file.name.replace(/\.[^/.]+$/, '') || 'Lagu Unggahan';
+      const localObjUrl = URL.createObjectURL(file);
+      updateAdminMusicPreview(localObjUrl, cleanFileName, true, localObjUrl);
+      showAdminMusicNotice(`Mengunggah "${cleanFileName}" ke server...`);
+
+      readFileAsDataUrl(file, async (dataUrl) => {
+        let finalMusicUrl = '';
+        try {
+          const uploadRes = await fetch('/api/upload-audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name, dataUrl })
+          });
+          if (uploadRes.ok) {
+            const uploadJson = await uploadRes.json();
+            if (uploadJson && uploadJson.url) {
+              finalMusicUrl = uploadJson.url;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('[DexxDigital] /api/upload-audio fallback notice:', uploadErr);
+        }
+
+        if (!finalMusicUrl) {
+          if (file.size <= 700 * 1024) {
+            finalMusicUrl = dataUrl;
+          } else {
+            showAdminMusicNotice(
+              'Gagal mengunggah file > 700 KB ke server. Pastikan server aktif atau gunakan file <= 700 KB / link URL MP3.',
+              true
+            );
+            editMusicFile.value = '';
+            return;
+          }
+        }
+
+        weddingConfig.musicUrl = finalMusicUrl;
+        weddingConfig.musicTitle = cleanFileName;
+        weddingConfig.musicEnabled = true;
+
+        const titleInput = document.getElementById('editMusicTitle');
+        const urlInput = document.getElementById('editMusicUrl');
+        const toggleMusic = document.getElementById('toggleMusicEnabled');
+        if (titleInput) titleInput.value = weddingConfig.musicTitle;
+        if (urlInput) urlInput.value = finalMusicUrl;
+        if (toggleMusic) toggleMusic.checked = true;
+
+        updateAdminMusicPreview(finalMusicUrl, weddingConfig.musicTitle, true);
+        await saveConfig(weddingConfig);
+        showAdminMusicNotice(`Lagu "${weddingConfig.musicTitle}" berhasil diunggah dan langsung diterapkan!`);
+      });
+    });
+  }
+
+  // Apply & Save Music URL/Title Button
+  const btnApplyMusic = document.getElementById('btnApplyMusic');
+  if (btnApplyMusic) {
+    btnApplyMusic.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const origHtml = btnApplyMusic.innerHTML;
+      btnApplyMusic.disabled = true;
+      btnApplyMusic.innerText = 'Menyimpan Lagu...';
+      try {
+        await collectAdminFieldsAndSave();
+        showAdminMusicNotice('Pengaturan lagu undangan berhasil disimpan & diterapkan!');
+      } finally {
+        btnApplyMusic.disabled = false;
+        btnApplyMusic.innerHTML = origHtml;
+      }
+    });
+  }
+
+  // Reset Music to Default
+  const btnResetMusic = document.getElementById('btnResetDefaultMusic');
+  if (btnResetMusic) {
+    btnResetMusic.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const origHtml = btnResetMusic.innerHTML;
+      btnResetMusic.disabled = true;
+      btnResetMusic.innerText = 'Mereset...';
+      try {
+        weddingConfig.musicUrl = DEFAULT_CONFIG.musicUrl;
+        weddingConfig.musicTitle = DEFAULT_CONFIG.musicTitle;
+        weddingConfig.musicEnabled = true;
+
+        const titleInput = document.getElementById('editMusicTitle');
+        const urlInput = document.getElementById('editMusicUrl');
+        const toggleMusic = document.getElementById('toggleMusicEnabled');
+        if (titleInput) titleInput.value = DEFAULT_CONFIG.musicTitle;
+        if (urlInput) urlInput.value = DEFAULT_CONFIG.musicUrl;
+        if (toggleMusic) toggleMusic.checked = true;
+        if (editMusicFile) editMusicFile.value = '';
+
+        updateAdminMusicPreview(DEFAULT_CONFIG.musicUrl, DEFAULT_CONFIG.musicTitle, true);
+        await saveConfig(weddingConfig);
+        showAdminMusicNotice('Lagu berhasil dikembalikan ke setelan awal.');
+      } finally {
+        btnResetMusic.disabled = false;
+        btnResetMusic.innerHTML = origHtml;
+      }
+    });
+  }
+
+  // Live preview update when typing music URL
+  const editMusicUrlInput = document.getElementById('editMusicUrl');
+  if (editMusicUrlInput) {
+    editMusicUrlInput.addEventListener('change', () => {
+      const normalized = normalizeAudioUrl(editMusicUrlInput.value);
+      if (normalized !== editMusicUrlInput.value.trim()) {
+        editMusicUrlInput.value = normalized;
+      }
+      const titleVal = document.getElementById('editMusicTitle')?.value || weddingConfig.musicTitle;
+      const enabledVal = document.getElementById('toggleMusicEnabled')?.checked !== false;
+      updateAdminMusicPreview(normalized, titleVal, enabledVal);
+    });
+  }
+
+  // Live toggles for Bank, DANA, QRIS, and Music in Admin Panel
+  ['toggleBankEnabled', 'toggleDanaEnabled', 'toggleQrisEnabled', 'toggleMusicEnabled'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('change', () => {
@@ -1853,10 +2314,11 @@ function setupAdminFileUploads() {
         showWishNotification('Seluruh riwayat komentar ucapan tamu telah dibersihkan.');
 
         // Delete all wishes from Firebase Firestore
-        if (firestoreDb) {
+        const fb = getFirebaseBridge();
+        if (fb) {
           try {
-            firestoreDb.collection('wedding_wishes').get().then((snapshot) => {
-              const batch = firestoreDb.batch();
+            fb.getDocs(fb.collection(fb.db, 'wedding_wishes')).then((snapshot) => {
+              const batch = fb.writeBatch(fb.db);
               snapshot.docs.forEach((d) => batch.delete(d.ref));
               return batch.commit();
             }).catch(err => console.warn('Firestore clear error:', err));
@@ -1895,26 +2357,42 @@ function setupAdminFileUploads() {
     btnTestFb.addEventListener('click', async () => {
       btnTestFb.disabled = true;
       btnTestFb.innerText = 'Menguji koneksi Firestore...';
-      if (!firestoreDb) {
-        updateFirebaseUIStatus(false, 'SDK Firebase belum terinisialisasi. Periksa koneksi internet atau script CDN.');
+      const fb = getFirebaseBridge();
+      if (!fb) {
+        updateFirebaseUIStatus(false, 'SDK Firebase (npm) belum siap. Tunggu beberapa detik atau muat ulang halaman.');
         btnTestFb.disabled = false;
-        btnTestFb.innerText = 'Uji Koneksi & Sinkronkan Sekarang';
+        btnTestFb.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Uji Koneksi &amp; Sinkronkan Sekarang</span>`;
         return;
       }
       try {
-        // Test write & read probe doc
-        await firestoreDb.collection('wedding_data').doc('probe_test').set({
-          status: 'connected',
-          timestamp: new Date().toISOString(),
-          developer: 'DexxDigital'
-        });
+        const diag = await diagnoseFirestoreEndpoint();
+        if (!diag.ok) {
+          updateFirebaseUIStatus(false, diag.message);
+          return;
+        }
+        // Test write & read probe doc with timeout
+        await withPromiseTimeout(
+          fb.setDoc(fb.doc(fb.db, 'wedding_data', 'probe_test'), {
+            status: 'connected',
+            projectId: fb.projectId,
+            timestamp: new Date().toISOString(),
+            developer: 'DexxDigital'
+          }),
+          8000,
+          'Koneksi Firestore timeout. Pastikan database Firestore aktif dan Rules terbuka.'
+        );
         // Push config to Firestore
-        await firestoreDb.collection('wedding_data').doc('config').set(weddingConfig);
-        updateFirebaseUIStatus(true, 'Koneksi Firestore BERHASIL! Database cloud aktif & tersinkronisasi 100%.');
+        await withPromiseTimeout(
+          fb.setDoc(fb.doc(fb.db, 'wedding_data', 'config'), sanitizeForFirestore(weddingConfig)),
+          8000,
+          'Gagal mengunggah konfigurasi ke Firestore.'
+        );
+        await seedDefaultWishesToFirestore(fb);
+        updateFirebaseUIStatus(true, 'Koneksi Firestore (wedding-d0f83) BERHASIL! Database cloud aktif & tersinkronisasi 100%.');
       } catch (err) {
         console.warn('Firebase test connection error:', err);
         if (err.code === 'permission-denied') {
-          updateFirebaseUIStatus(false, 'Aturan Firestore diblokir (Permission Denied). Salin kode aturan di bawah dan tempelkan ke Firebase Console -> Rules!');
+          updateFirebaseUIStatus(false, 'Aturan Firestore diblokir (Permission Denied). Salin kode aturan di bawah dan tempelkan ke Firebase Console (wedding-d0f83) -> Rules!');
         } else {
           updateFirebaseUIStatus(false, 'Status Firebase: ' + (err.message || 'Error koneksi'));
         }
@@ -1928,15 +2406,26 @@ function setupAdminFileUploads() {
   const btnSeedFb = document.getElementById('btnSeedFirebaseData');
   if (btnSeedFb) {
     btnSeedFb.addEventListener('click', async () => {
-      if (!firestoreDb) {
-        alert('Firebase belum terhubung');
+      const fb = getFirebaseBridge();
+      if (!fb) {
+        updateFirebaseUIStatus(false, 'Firebase belum terhubung. Tunggu beberapa detik lalu coba lagi.');
         return;
       }
       btnSeedFb.disabled = true;
       btnSeedFb.innerText = 'Mengunggah ke Firestore...';
       try {
-        await firestoreDb.collection('wedding_data').doc('config').set(weddingConfig);
-        updateFirebaseUIStatus(true, 'Data pernikahan saat ini berhasil diunggah ke Firebase Firestore.');
+        const diag = await diagnoseFirestoreEndpoint();
+        if (!diag.ok) {
+          updateFirebaseUIStatus(false, diag.message);
+          return;
+        }
+        await withPromiseTimeout(
+          fb.setDoc(fb.doc(fb.db, 'wedding_data', 'config'), sanitizeForFirestore(weddingConfig)),
+          8000,
+          'Waktu unggah ke Firestore habis.'
+        );
+        await seedDefaultWishesToFirestore(fb);
+        updateFirebaseUIStatus(true, 'Data pernikahan saat ini berhasil diunggah ke Firebase Firestore (wedding-d0f83).');
       } catch (err) {
         updateFirebaseUIStatus(false, 'Gagal mengunggah ke Firestore: ' + err.message);
       } finally {
@@ -2162,9 +2651,10 @@ function renderAdminWishes() {
       showWishNotification(`Komentar doa dari "${guestName}" telah berhasil dihapus.`);
 
       // Multi-device sync: delete on Firebase Firestore
-      if (firestoreDb) {
+      const fb = getFirebaseBridge();
+      if (fb) {
         try {
-          firestoreDb.collection('wedding_wishes').doc(String(wishId)).delete().catch(err => {
+          fb.deleteDoc(fb.doc(fb.db, 'wedding_wishes', String(wishId))).catch(err => {
             console.warn('[DexxDigital] Firestore wish delete error:', err);
           });
         } catch (e) {}
@@ -2251,15 +2741,14 @@ function setupDevPortalLogic() {
         localStorage.setItem('dexxdigital_admin_pass', newP);
 
         // Sync to Firebase Firestore
-        if (firestoreDb) {
+        const fb = getFirebaseBridge();
+        if (fb) {
           try {
-            firestoreDb.collection('wedding_data').doc('admin_security').set({
+            fb.setDoc(fb.doc(fb.db, 'wedding_data', 'admin_security'), {
               password: newP,
               email: localStorage.getItem('dexxdigital_admin_email') || 'admin@wedding.com',
               updatedBy: 'DexxDigital Developer Console',
-              updatedAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
-                ? firebase.firestore.FieldValue.serverTimestamp()
-                : new Date()
+              updatedAt: fb.serverTimestamp ? fb.serverTimestamp() : new Date()
             }).catch(err => console.warn('Firestore password sync notice:', err));
           } catch (e) {}
         }
