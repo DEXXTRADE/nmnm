@@ -69,6 +69,9 @@ const DEFAULT_CONFIG = {
   musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-piano-112191.mp3',
   musicAudioChunkId: '',
   musicAudioMime: '',
+  defaultGuestName: 'Tamu Undangan',
+  guestInviteTemplate: '',
+  guestList: [],
   developerContact: {
     agencyName: 'DexxDigital',
     tagline: 'Jasa Pembuatan Website Undangan Pernikahan Digital Elegan & Interaktif',
@@ -231,6 +234,9 @@ function mergeWithDefaults(data) {
   return {
     ...base,
     ...data,
+    defaultGuestName: (data?.defaultGuestName !== undefined ? String(data.defaultGuestName).trim() : String(base.defaultGuestName || '').trim()) || 'Tamu Undangan',
+    guestInviteTemplate: data?.guestInviteTemplate !== undefined ? String(data.guestInviteTemplate) : String(base.guestInviteTemplate || ''),
+    guestList: Array.isArray(data?.guestList) ? data.guestList : (Array.isArray(base.guestList) ? base.guestList : []),
     bride: { ...base.bride, ...(data?.bride || {}) },
     groom: { ...base.groom, ...(data?.groom || {}) },
     akad: { ...base.akad, ...(data?.akad || {}) },
@@ -494,11 +500,22 @@ function saveWishes(wishes) {
   renderAdminWishes();
 }
 
-// Guest Name Parser
-function parseGuestName() {
+// Guest Name Parser (URL ?to= or Admin Default Guest Name)
+function resolveGuestDisplayInfo() {
+  const defaultName = weddingConfig?.defaultGuestName || 'Tamu Undangan';
+  if (typeof window !== 'undefined' && window.DEXX_HELPERS?.resolveGuestDisplayName) {
+    return window.DEXX_HELPERS.resolveGuestDisplayName(window.location.search, defaultName);
+  }
   const params = new URLSearchParams(window.location.search);
   const to = params.get('to') || params.get('tamu') || params.get('guest');
-  return to ? decodeURIComponent(to) : 'Tamu Undangan';
+  if (to && to.trim()) {
+    return { name: to.trim(), isCustomUrlGuest: true };
+  }
+  return { name: String(defaultName).trim() || 'Tamu Undangan', isCustomUrlGuest: false };
+}
+
+function parseGuestName() {
+  return resolveGuestDisplayInfo().name;
 }
 
 // Particle Canvas Animation
@@ -1225,11 +1242,13 @@ function renderAll() {
   const heroDate = document.getElementById('textHeroDate');
   if (heroDate) heroDate.innerText = c.akad.date;
 
-  const guestName = parseGuestName();
+  const resolvedGuest = resolveGuestDisplayInfo();
   const guestEl = document.getElementById('textGuestName');
-  if (guestEl) guestEl.innerText = guestName;
+  if (guestEl) guestEl.innerText = resolvedGuest.name;
   const inputName = document.getElementById('inputGuestName');
-  if (inputName && !inputName.value) inputName.value = guestName !== 'Tamu Undangan' ? guestName : '';
+  if (inputName && !inputName.value && resolvedGuest.isCustomUrlGuest) {
+    inputName.value = resolvedGuest.name;
+  }
 
   // Quotes
   const qArabic = document.getElementById('quoteArabic');
@@ -1655,18 +1674,12 @@ function initApp() {
     });
   }
 
-  // ================= ADMIN & DEVELOPER CONSOLE TRIGGERS (TERSEMBUNYI) =================
-  let devClickCounter = 0;
-
-  // 1. Secret Trigger: Klik Copyright Footer 3x membuka DexxDigital Developer Console
+  // 1. Secret Trigger: Klik/Tap Copyright Footer langsung membuka Admin Panel Klien (ramah HP), Developer Console khusus via Ctrl+Shift+89
   const footerCopy = document.getElementById('footerCopyright');
   if (footerCopy) {
-    footerCopy.addEventListener('click', () => {
-      devClickCounter++;
-      if (devClickCounter >= 3) {
-        devClickCounter = 0;
-        openDevPortal();
-      }
+    footerCopy.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAdminPanel();
     });
   }
 
@@ -1929,6 +1942,7 @@ function setupAdminPanelLogic() {
   }
 
   setupAdminFileUploads();
+  setupGuestManagerLogic();
 
   // Save All Changes Button
   const btnSave = document.getElementById('btnSaveAllChanges');
@@ -2064,7 +2078,18 @@ function populateAdminFields(preserveFocused = false) {
     updateAdminMusicPreview(c.musicUrl || '', c.musicTitle || 'Romantic Wedding Piano', c.musicEnabled !== false, null, c.musicAudioChunkId || '');
   }
 
+  // Default Guest Name & WA Template
+  const defGuestInput = document.getElementById('editDefaultGuestName');
+  if (defGuestInput && (!preserveFocused || document.activeElement !== defGuestInput)) {
+    defGuestInput.value = c.defaultGuestName || 'Tamu Undangan';
+  }
+  const waTplInput = document.getElementById('editGuestWaTemplate');
+  if (waTplInput && (!preserveFocused || document.activeElement !== waTplInput)) {
+    waTplInput.value = c.guestInviteTemplate || '';
+  }
+
   renderAdminGalleryList();
+  renderAdminGuestList();
   renderAdminWishes();
   updateCountdown();
 }
@@ -2266,6 +2291,16 @@ function collectAdminFieldsAndSave() {
     }
   }
   updateAdminMusicPreview(c.musicUrl, c.musicTitle, c.musicEnabled, null, c.musicAudioChunkId || '');
+
+  // Nama Tamu Undangan Default & Template WA
+  const defGuestVal = document.getElementById('editDefaultGuestName')?.value;
+  if (defGuestVal !== undefined) {
+    c.defaultGuestName = defGuestVal.trim() || 'Tamu Undangan';
+  }
+  const guestWaTplVal = document.getElementById('editGuestWaTemplate')?.value;
+  if (guestWaTplVal !== undefined) {
+    c.guestInviteTemplate = guestWaTplVal;
+  }
 
   return saveConfig(c);
 }
@@ -2857,8 +2892,369 @@ function renderAdminGalleryList() {
   });
 }
 
+// Admin Dashboard RSVP Statistics Cards (Otomatis dari Data Buku Tamu)
+function renderAdminRsvpStats() {
+  const stats = window.DEXX_HELPERS?.computeRsvpStats
+    ? window.DEXX_HELPERS.computeRsvpStats(weddingWishes)
+    : (() => {
+        const list = Array.isArray(weddingWishes) ? weddingWishes : [];
+        let hadir = 0, tidakHadir = 0, raguRagu = 0;
+        list.forEach((w) => {
+          const r = String(w?.rsvp || 'Hadir').trim().toLowerCase();
+          if (r === 'tidak hadir') tidakHadir += 1;
+          else if (r === 'ragu-ragu' || r === 'ragu ragu') raguRagu += 1;
+          else hadir += 1;
+        });
+        return { total: list.length, hadir, tidakHadir, raguRagu };
+      })();
+
+  const totalEl = document.getElementById('statTotalWishes');
+  const hadirEl = document.getElementById('statHadirCount');
+  const tidakHadirEl = document.getElementById('statTidakHadirCount');
+  const raguEl = document.getElementById('statRaguCount');
+
+  const hadirPctEl = document.getElementById('statHadirPct');
+  const tidakHadirPctEl = document.getElementById('statTidakHadirPct');
+  const raguPctEl = document.getElementById('statRaguPct');
+
+  if (totalEl) totalEl.innerText = String(stats.total);
+  if (hadirEl) hadirEl.innerText = String(stats.hadir);
+  if (tidakHadirEl) tidakHadirEl.innerText = String(stats.tidakHadir);
+  if (raguEl) raguEl.innerText = String(stats.raguRagu);
+
+  const calcPct = (val) => (stats.total > 0 ? Math.round((val / stats.total) * 100) : 0);
+  if (hadirPctEl) hadirPctEl.innerText = `${calcPct(stats.hadir)}% konfirmasi`;
+  if (tidakHadirPctEl) tidakHadirPctEl.innerText = `${calcPct(stats.tidakHadir)}% konfirmasi`;
+  if (raguPctEl) raguPctEl.innerText = `${calcPct(stats.raguRagu)}% konfirmasi`;
+}
+
+// Guest Invitation List Management in Admin Panel
+let editingGuestId = null;
+
+function showAdminGuestNotice(msg, isError = false) {
+  const notice = document.getElementById('adminGuestNotice');
+  const noticeText = document.getElementById('adminGuestNoticeText');
+  if (!notice || !noticeText) return;
+  notice.className = isError
+    ? 'p-3 bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs rounded-xl flex items-center justify-between'
+    : 'p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center justify-between';
+  noticeText.innerText = msg;
+  notice.classList.remove('hidden');
+  clearTimeout(notice._hideTimer);
+  notice._hideTimer = setTimeout(() => notice.classList.add('hidden'), 4000);
+}
+
+function getGuestInviteUrl(guestName) {
+  const href = typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000/';
+  if (window.DEXX_HELPERS?.buildGuestInviteUrl) {
+    return window.DEXX_HELPERS.buildGuestInviteUrl(href, guestName);
+  }
+  return `${window.location.origin}${window.location.pathname}?to=${encodeURIComponent(guestName || '')}`;
+}
+
+function getGuestWaShareHref(guestName, inviteUrl) {
+  const coupleNames = `${weddingConfig?.bride?.nickName || 'Arina'} & ${weddingConfig?.groom?.nickName || 'Bagas'}`;
+  const eventDate = weddingConfig?.akad?.date || '';
+  const venue = weddingConfig?.akad?.venue || '';
+  const template = weddingConfig?.guestInviteTemplate || '';
+
+  const text = window.DEXX_HELPERS?.buildGuestWhatsappMessage
+    ? window.DEXX_HELPERS.buildGuestWhatsappMessage({
+        guestName,
+        coupleNames,
+        eventDate,
+        venue,
+        inviteUrl,
+        template
+      })
+    : `Kepada Yth. ${guestName}, kami mengundang Anda ke pernikahan ${coupleNames}: ${inviteUrl}`;
+
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+function renderAdminGuestList() {
+  const cont = document.getElementById('adminGuestList');
+  const countEl = document.getElementById('adminGuestCount');
+  const searchVal = (document.getElementById('inputSearchGuest')?.value || '').trim().toLowerCase();
+  const guests = Array.isArray(weddingConfig?.guestList) ? weddingConfig.guestList : [];
+
+  if (countEl) countEl.innerText = String(guests.length);
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  const filtered = searchVal
+    ? guests.filter((g) => {
+        const n = String(g?.name || '').toLowerCase();
+        const note = String(g?.note || '').toLowerCase();
+        return n.includes(searchVal) || note.includes(searchVal);
+      })
+    : guests;
+
+  if (guests.length === 0) {
+    cont.innerHTML = '<div class="p-6 text-center text-xs text-stone-400 bg-stone-950 rounded-xl border border-stone-800">Belum ada nama tamu undangan yang disimpan. Tambahkan nama tamu di atas untuk membuat link undangan pribadi &amp; kirim ke WhatsApp.</div>';
+    return;
+  }
+
+  if (filtered.length === 0) {
+    cont.innerHTML = '<div class="p-5 text-center text-xs text-stone-400 bg-stone-950 rounded-xl border border-stone-800">Tidak ada nama tamu yang cocok dengan pencarian Anda.</div>';
+    return;
+  }
+
+  filtered.forEach((guest) => {
+    const inviteUrl = getGuestInviteUrl(guest.name);
+    const waHref = getGuestWaShareHref(guest.name, inviteUrl);
+    const card = document.createElement('div');
+    card.className = 'p-3 bg-stone-950 border border-stone-800 rounded-xl space-y-2.5 transition hover:border-stone-700';
+
+    if (editingGuestId === guest.id) {
+      card.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input type="text" value="${escapeHtml(guest.name)}" aria-label="Edit nama tamu" class="edit-guest-name-input w-full px-2.5 py-1.5 bg-stone-900 border border-amber-500/50 rounded-lg text-xs text-stone-100 focus:outline-none" />
+          <input type="text" value="${escapeHtml(guest.note || '')}" placeholder="Kategori/Sesi (Opsional)" aria-label="Edit kategori tamu" class="edit-guest-note-input w-full px-2.5 py-1.5 bg-stone-900 border border-stone-700 rounded-lg text-xs text-stone-100 focus:outline-none" />
+        </div>
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" class="btn-cancel-edit-guest px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] cursor-pointer">Batal</button>
+          <button type="button" class="btn-save-edit-guest px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-medium cursor-pointer" data-id="${escapeHtml(guest.id)}">Simpan</button>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <strong class="text-xs sm:text-sm text-amber-100 break-words">${escapeHtml(guest.name)}</strong>
+              ${guest.note ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300">${escapeHtml(guest.note)}</span>` : ''}
+            </div>
+            <p class="text-[10px] text-stone-400 font-mono truncate mt-0.5" title="${escapeHtml(inviteUrl)}">${escapeHtml(inviteUrl)}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" aria-label="Edit ${escapeHtml(guest.name)}" class="btn-edit-guest px-2 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-300 text-[11px] transition cursor-pointer" data-id="${escapeHtml(guest.id)}">Edit</button>
+            <button type="button" aria-label="Hapus ${escapeHtml(guest.name)}" class="btn-delete-guest px-2 py-1 rounded-lg bg-rose-900/50 hover:bg-rose-800 border border-rose-500/40 text-rose-200 text-[11px] transition cursor-pointer" data-id="${escapeHtml(guest.id)}">Hapus</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" class="btn-copy-guest-link px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 text-[11px] font-medium transition cursor-pointer" data-url="${escapeHtml(inviteUrl)}" data-name="${escapeHtml(guest.name)}">
+            Salin Link Undangan
+          </button>
+          <a href="${escapeHtml(waHref)}" target="_blank" rel="noreferrer" class="px-2.5 py-1.5 rounded-lg bg-emerald-700/30 hover:bg-emerald-700/50 border border-emerald-500/40 text-emerald-200 text-[11px] font-medium transition cursor-pointer inline-flex items-center gap-1">
+            <span>Kirim ke WhatsApp</span>
+          </a>
+        </div>
+      `;
+    }
+    cont.appendChild(card);
+  });
+
+  cont.querySelectorAll('.btn-copy-guest-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const url = btn.getAttribute('data-url') || '';
+      const name = btn.getAttribute('data-name') || 'Tamu';
+      copyToClipboard(url, () => {
+        const orig = btn.innerText;
+        btn.innerText = 'Link Tersalin!';
+        showAdminGuestNotice(`Link undangan untuk "${name}" berhasil disalin.`);
+        setTimeout(() => {
+          btn.innerText = orig;
+        }, 2000);
+      });
+    });
+  });
+
+  cont.querySelectorAll('.btn-edit-guest').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      editingGuestId = btn.getAttribute('data-id');
+      renderAdminGuestList();
+    });
+  });
+
+  cont.querySelectorAll('.btn-cancel-edit-guest').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      editingGuestId = null;
+      renderAdminGuestList();
+    });
+  });
+
+  cont.querySelectorAll('.btn-save-edit-guest').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const cardEl = btn.closest('div.p-3');
+      const newName = cardEl?.querySelector('.edit-guest-name-input')?.value?.trim() || '';
+      const newNote = cardEl?.querySelector('.edit-guest-note-input')?.value?.trim() || '';
+      if (!newName) {
+        showAdminGuestNotice('Nama tamu tidak boleh kosong.', true);
+        return;
+      }
+      const list = Array.isArray(weddingConfig.guestList) ? [...weddingConfig.guestList] : [];
+      const target = list.find((g) => String(g.id) === String(id));
+      if (target) {
+        target.name = newName;
+        target.note = newNote;
+        weddingConfig.guestList = list;
+        editingGuestId = null;
+        renderAdminGuestList();
+        await saveConfig(weddingConfig);
+        showAdminGuestNotice(`Data tamu "${newName}" berhasil diperbarui.`);
+      }
+    });
+  });
+
+  cont.querySelectorAll('.btn-delete-guest').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const list = Array.isArray(weddingConfig.guestList) ? weddingConfig.guestList : [];
+      const target = list.find((g) => String(g.id) === String(id));
+      weddingConfig.guestList = list.filter((g) => String(g.id) !== String(id));
+      if (editingGuestId === id) editingGuestId = null;
+      renderAdminGuestList();
+      await saveConfig(weddingConfig);
+      showAdminGuestNotice(`Tamu "${target?.name || 'Undangan'}" dihapus dari daftar.`);
+    });
+  });
+}
+
+function setupGuestManagerLogic() {
+  const btnSaveDefault = document.getElementById('btnSaveDefaultGuestName');
+  const defInput = document.getElementById('editDefaultGuestName');
+  if (btnSaveDefault && !btnSaveDefault._boundGuest) {
+    btnSaveDefault._boundGuest = true;
+    btnSaveDefault.addEventListener('click', async () => {
+      const val = defInput?.value?.trim() || 'Tamu Undangan';
+      weddingConfig.defaultGuestName = val;
+      if (defInput) defInput.value = val;
+      await saveConfig(weddingConfig);
+      showAdminGuestNotice(`Nama tamu default diperbarui menjadi "${val}".`);
+    });
+  }
+
+  const addNameInput = document.getElementById('inputAddGuestName');
+  const addNoteInput = document.getElementById('inputAddGuestNote');
+  const btnAddGuest = document.getElementById('btnAddGuest');
+  const handleSingleAdd = async () => {
+    const rawName = addNameInput?.value?.trim() || '';
+    const rawNote = addNoteInput?.value?.trim() || '';
+    if (!rawName) {
+      showAdminGuestNotice('Masukkan nama tamu terlebih dahulu.', true);
+      addNameInput?.focus();
+      return;
+    }
+    const existing = Array.isArray(weddingConfig.guestList) ? weddingConfig.guestList : [];
+    const duplicate = existing.some((g) => String(g.name || '').trim().toLowerCase() === rawName.toLowerCase());
+    if (duplicate) {
+      showAdminGuestNotice(`Nama "${rawName}" sudah ada di daftar tamu.`, true);
+      return;
+    }
+    const newEntry = {
+      id: `guest-${Date.now()}`,
+      name: rawName,
+      note: rawNote,
+      createdAt: Date.now()
+    };
+    weddingConfig.guestList = [newEntry, ...existing];
+    if (addNameInput) addNameInput.value = '';
+    if (addNoteInput) addNoteInput.value = '';
+    renderAdminGuestList();
+    await saveConfig(weddingConfig);
+    showAdminGuestNotice(`Tamu "${rawName}" berhasil ditambahkan.`);
+  };
+
+  if (btnAddGuest && !btnAddGuest._boundGuest) {
+    btnAddGuest._boundGuest = true;
+    btnAddGuest.addEventListener('click', handleSingleAdd);
+  }
+  if (addNameInput && !addNameInput._boundEnter) {
+    addNameInput._boundEnter = true;
+    addNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSingleAdd();
+      }
+    });
+  }
+
+  const bulkInput = document.getElementById('inputBulkGuestNames');
+  const btnBulk = document.getElementById('btnAddBulkGuests');
+  if (btnBulk && !btnBulk._boundGuest) {
+    btnBulk._boundGuest = true;
+    btnBulk.addEventListener('click', async () => {
+      const rawText = bulkInput?.value || '';
+      const existing = Array.isArray(weddingConfig.guestList) ? weddingConfig.guestList : [];
+      const defaultNote = addNoteInput?.value?.trim() || '';
+      const newEntries = window.DEXX_HELPERS?.parseBulkGuestNames
+        ? window.DEXX_HELPERS.parseBulkGuestNames(rawText, existing, defaultNote)
+        : [];
+      if (newEntries.length === 0) {
+        showAdminGuestNotice('Tidak ada nama tamu baru yang valid untuk ditambahkan.', true);
+        return;
+      }
+      weddingConfig.guestList = [...newEntries, ...existing];
+      if (bulkInput) bulkInput.value = '';
+      renderAdminGuestList();
+      await saveConfig(weddingConfig);
+      showAdminGuestNotice(`${newEntries.length} nama tamu baru berhasil ditambahkan.`);
+    });
+  }
+
+  const btnSaveTpl = document.getElementById('btnSaveGuestTemplate');
+  const tplInput = document.getElementById('editGuestWaTemplate');
+  if (btnSaveTpl && !btnSaveTpl._boundGuest) {
+    btnSaveTpl._boundGuest = true;
+    btnSaveTpl.addEventListener('click', async () => {
+      weddingConfig.guestInviteTemplate = tplInput?.value || '';
+      renderAdminGuestList();
+      await saveConfig(weddingConfig);
+      showAdminGuestNotice('Template pesan WhatsApp undangan berhasil disimpan.');
+    });
+  }
+
+  const searchInput = document.getElementById('inputSearchGuest');
+  if (searchInput && !searchInput._boundGuest) {
+    searchInput._boundGuest = true;
+    searchInput.addEventListener('input', () => renderAdminGuestList());
+  }
+
+  const btnClearGuests = document.getElementById('btnClearAllGuests');
+  if (btnClearGuests && !btnClearGuests._boundGuest) {
+    btnClearGuests._boundGuest = true;
+    btnClearGuests.addEventListener('click', async () => {
+      const current = Array.isArray(weddingConfig.guestList) ? weddingConfig.guestList : [];
+      if (current.length === 0) {
+        showAdminGuestNotice('Daftar tamu masih kosong.');
+        return;
+      }
+      if (btnClearGuests.getAttribute('data-confirm') === 'true') {
+        weddingConfig.guestList = [];
+        editingGuestId = null;
+        btnClearGuests.innerText = 'Hapus Semua Tamu';
+        btnClearGuests.removeAttribute('data-confirm');
+        btnClearGuests.classList.remove('bg-rose-600', 'text-white');
+        renderAdminGuestList();
+        await saveConfig(weddingConfig);
+        showAdminGuestNotice('Seluruh daftar nama tamu telah dikosongkan.');
+      } else {
+        btnClearGuests.innerText = 'Yakin? Klik Lagi';
+        btnClearGuests.setAttribute('data-confirm', 'true');
+        btnClearGuests.classList.add('bg-rose-600', 'text-white');
+        setTimeout(() => {
+          btnClearGuests.innerText = 'Hapus Semua Tamu';
+          btnClearGuests.removeAttribute('data-confirm');
+          btnClearGuests.classList.remove('bg-rose-600', 'text-white');
+        }, 4000);
+      }
+    });
+  }
+
+  const btnCloseNotice = document.getElementById('btnCloseGuestNotice');
+  if (btnCloseNotice && !btnCloseNotice._boundGuest) {
+    btnCloseNotice._boundGuest = true;
+    btnCloseNotice.addEventListener('click', () => {
+      document.getElementById('adminGuestNotice')?.classList.add('hidden');
+    });
+  }
+}
+
 // Admin Wishes Moderation List (HAPUS KOMENAN)
 function renderAdminWishes() {
+  renderAdminRsvpStats();
   const cont = document.getElementById('adminWishesList');
   if (!cont) return;
   cont.innerHTML = '';

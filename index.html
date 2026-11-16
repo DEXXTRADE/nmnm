@@ -482,7 +482,7 @@
     <!-- ================= FOOTER & DEVELOPER (DEXXDIGITAL) ================= -->
     <footer class="mt-16 py-8 px-4 border-t border-stone-900 bg-stone-950/90 text-center space-y-4">
       <div class="flex items-center justify-center gap-2 text-xs text-stone-400">
-        <!-- Copyright (Stealth Secret Trigger: 3 clicks on copyright or Ctrl+Shift+89) -->
+        <!-- Copyright (Stealth Trigger: Tekan/klik untuk membuka Admin Panel Klien; Developer Console pakai Ctrl+Shift+89) -->
         <span id="footerCopyright" class="cursor-pointer select-none">© 2026 Arina &amp; Bagas</span>
         <span>·</span>
         <span>All Rights Reserved</span>
@@ -597,6 +597,7 @@
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-gallery">Galeri Foto (File)</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-music">Lagu &amp; Musik</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-envelope">DANA &amp; QRIS</button>
+          <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-guests">Nama Tamu Undangan</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-wishes">Moderasi Buku Tamu</button>
           <button class="btn-tab-admin flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition whitespace-nowrap text-stone-400 hover:text-stone-200 hover:bg-stone-900 cursor-pointer" data-tab="tab-firebase">
             <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
@@ -612,7 +613,48 @@
         </div>
 
         <!-- Tab Body Content -->
-        <div class="flex-1 p-6 overflow-y-auto space-y-6">
+        <div class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-5">
+          <!-- RSVP Statistic Cards (Otomatis dari Data Buku Tamu) -->
+          <section id="adminRsvpStatsSection" aria-label="Statistik Kehadiran Buku Tamu" class="space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-[11px] uppercase tracking-wider font-semibold text-amber-300">Statistik Kehadiran Tamu (Otomatis Buku Tamu)</span>
+              <span class="text-[11px] text-stone-400 bg-stone-950/80 border border-stone-800 px-2.5 py-0.5 rounded-lg">
+                Total Ucapan: <strong id="statTotalWishes" class="text-stone-100 tabular-nums">0</strong>
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+              <!-- Hadir -->
+              <div id="statCardHadir" class="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-stone-950 border border-emerald-500/30 shadow">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-300">Hadir</span>
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div id="statHadirCount" class="text-xl sm:text-2xl font-serif font-bold text-white tabular-nums">0</div>
+                <span id="statHadirPct" class="text-[10px] sm:text-[11px] text-emerald-300/80 block mt-0.5">0% konfirmasi</span>
+              </div>
+
+              <!-- Tidak Hadir -->
+              <div id="statCardTidakHadir" class="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-rose-950/60 to-stone-950 border border-rose-500/30 shadow">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-rose-300">Tidak Hadir</span>
+                  <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div id="statTidakHadirCount" class="text-xl sm:text-2xl font-serif font-bold text-white tabular-nums">0</div>
+                <span id="statTidakHadirPct" class="text-[10px] sm:text-[11px] text-rose-300/80 block mt-0.5">0% konfirmasi</span>
+              </div>
+
+              <!-- Ragu-ragu -->
+              <div id="statCardRagu" class="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/60 to-stone-950 border border-amber-500/30 shadow">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-amber-300">Ragu-ragu</span>
+                  <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div id="statRaguCount" class="text-xl sm:text-2xl font-serif font-bold text-white tabular-nums">0</div>
+                <span id="statRaguPct" class="text-[10px] sm:text-[11px] text-amber-300/80 block mt-0.5">0% konfirmasi</span>
+              </div>
+            </div>
+          </section>
+
           <div id="saveSuccessNotice" class="hidden p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center gap-2">
             Perubahan berhasil disimpan dan langsung aktif di web!
           </div>
@@ -956,6 +998,105 @@
                     <span id="adminQrisStatus" class="text-[11px] text-stone-400">QRIS aktif</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: NAMA TAMU UNDANGAN -->
+          <div id="tab-guests" class="tab-pane hidden space-y-5">
+            <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-stone-800">
+              <div>
+                <h4 class="text-base font-semibold text-amber-100">Kelola Nama Tamu Undangan</h4>
+                <p class="text-[11px] text-stone-400 mt-0.5">
+                  Atur sapaan tamu bawaan serta kelola daftar tamu untuk membuat link undangan khusus (<code class="text-amber-300">?to=Nama</code>) dan kirim langsung ke WhatsApp.
+                </p>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-lg bg-stone-950 border border-stone-800 text-amber-200">
+                Total Tamu: <strong id="adminGuestCount" class="tabular-nums">0</strong>
+              </span>
+            </div>
+
+            <div id="adminGuestNotice" class="hidden p-3 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center justify-between">
+              <span id="adminGuestNoticeText">Daftar tamu berhasil diperbarui!</span>
+              <button type="button" id="btnCloseGuestNotice" class="text-emerald-400 hover:text-emerald-200 text-xs ml-2 cursor-pointer">Tutup</button>
+            </div>
+
+            <!-- 1. Sapaan Tamu Default -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-2.5">
+              <label for="editDefaultGuestName" class="block text-xs font-bold text-amber-300 uppercase tracking-wider">1. Nama Tamu Default (Link Umum Tanpa Parameter ?to=)</label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input id="editDefaultGuestName" type="text" placeholder="Contoh: Tamu Undangan / Bapak/Ibu &amp; Sahabat" class="flex-1 px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 focus:border-amber-400 focus:outline-none" />
+                <button id="btnSaveDefaultGuestName" type="button" class="px-4 py-2 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-amber-200 rounded-xl text-xs font-medium transition cursor-pointer shrink-0">
+                  Terapkan Nama Default
+                </button>
+              </div>
+              <p class="text-[11px] text-stone-400">Tampil di kotak &quot;Kepada Yth.&quot; pada sampul undangan jika dibuka menggunakan link utama tanpa nama tamu spesifik.</p>
+            </div>
+
+            <!-- 2. Tambah Nama Tamu (Satuan / Banyak Sekaligus) -->
+            <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-3">
+              <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">2. Tambah Nama Tamu Undangan</h5>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <div class="sm:col-span-6">
+                  <label for="inputAddGuestName" class="block text-[11px] text-stone-400 mb-1">Nama Tamu *</label>
+                  <input id="inputAddGuestName" type="text" placeholder="Contoh: Bpk. Hendra Wijaya &amp; Keluarga" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 focus:border-amber-400 focus:outline-none" />
+                </div>
+                <div class="sm:col-span-4">
+                  <label for="inputAddGuestNote" class="block text-[11px] text-stone-400 mb-1">Kategori / Sesi (Opsional)</label>
+                  <input id="inputAddGuestNote" type="text" placeholder="Contoh: Keluarga / VIP / Sesi 1" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 focus:border-amber-400 focus:outline-none" />
+                </div>
+                <div class="sm:col-span-2 flex items-end">
+                  <button id="btnAddGuest" type="button" class="w-full py-2 px-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl text-xs font-medium transition cursor-pointer shadow">
+                    + Tambah
+                  </button>
+                </div>
+              </div>
+
+              <details class="pt-1">
+                <summary class="text-[11px] text-amber-300/90 hover:text-amber-200 cursor-pointer select-none font-medium">
+                  + Tambah Banyak Tamu Sekaligus (Paste Daftar Nama Per Baris)
+                </summary>
+                <div class="mt-2.5 space-y-2">
+                  <textarea id="inputBulkGuestNames" rows="3" placeholder="Tulis 1 nama tamu per baris, contoh:&#10;Dr. Budi Santoso, S.Kom.&#10;Ibu Siti Aminah &amp; Keluarga&#10;Reza Pratama &amp; Partner" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 focus:border-amber-400 focus:outline-none"></textarea>
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-[11px] text-stone-400">Tanda koma pada gelar (mis. S.Kom., M.Pd.) tetap terjaga rapi.</span>
+                    <button id="btnAddBulkGuests" type="button" class="px-3.5 py-1.5 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-medium transition cursor-pointer">
+                      Tambahkan Semua Baris
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details class="pt-1 border-t border-stone-800/80">
+                <summary class="text-[11px] text-stone-300 hover:text-amber-200 cursor-pointer select-none font-medium pt-2">
+                  Atur Template Pesan Pengantar WhatsApp (Opsional)
+                </summary>
+                <div class="mt-2.5 space-y-2">
+                  <textarea id="editGuestWaTemplate" rows="4" placeholder="Kosongkan untuk memakai template standar yang rapi..." class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-200 leading-relaxed focus:border-amber-400 focus:outline-none"></textarea>
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-[10px] text-stone-400">Variabel otomatis: <code>[NAMA_TAMU]</code>, <code>[MEMPELAI]</code>, <code>[TANGGAL]</code>, <code>[TEMPAT]</code>, <code>[LINK_UNDANGAN]</code></span>
+                    <button id="btnSaveGuestTemplate" type="button" class="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-[11px] font-medium transition cursor-pointer">
+                      Simpan Template WA
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <!-- 3. Daftar Tamu & Aksi Bagikan Link -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex-1 min-w-[200px]">
+                  <label for="inputSearchGuest" class="sr-only">Cari Nama Tamu</label>
+                  <input id="inputSearchGuest" type="search" placeholder="Cari nama atau kategori tamu..." class="w-full px-3 py-2 bg-stone-950 border border-stone-800 rounded-xl text-xs text-stone-100 focus:border-amber-400 focus:outline-none" />
+                </div>
+                <button id="btnClearAllGuests" type="button" class="px-3 py-2 bg-rose-900/50 hover:bg-rose-800 border border-rose-500/40 text-rose-200 text-xs rounded-xl transition cursor-pointer shrink-0">
+                  Hapus Semua Tamu
+                </button>
+              </div>
+
+              <div id="adminGuestList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                <!-- Rendered via JS -->
               </div>
             </div>
           </div>
@@ -1307,11 +1448,11 @@ service cloud.firestore {
     </div>
   </div>
 
-  <!-- Shared Pure Helpers (Audio URL validation, Firestore Chunking, Dev Socials) -->
-  <script src="assets/js/helpers.js?v=2.5"></script>
+  <!-- Shared Pure Helpers (Audio URL validation, Firestore Chunking, Dev Socials, RSVP & Guests) -->
+  <script src="assets/js/helpers.js?v=2.7"></script>
   <!-- Master Configuration (GitHub Pages & Multi-Device Sync Ready) -->
-  <script src="assets/js/config.js?v=2.5"></script>
+  <script src="assets/js/config.js?v=2.7"></script>
   <!-- Pure Vanilla JavaScript Application Logic -->
-  <script src="assets/js/app.js?v=2.5"></script>
+  <script src="assets/js/app.js?v=2.7"></script>
 </body>
 </html>

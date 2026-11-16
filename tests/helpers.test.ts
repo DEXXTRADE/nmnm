@@ -8,7 +8,12 @@ const {
   validateAudioUrl,
   splitDataUrlIntoChunks,
   reassembleChunksToDataParts,
-  resolveDeveloperSocialVisibility
+  resolveDeveloperSocialVisibility,
+  computeRsvpStats,
+  resolveGuestDisplayName,
+  parseBulkGuestNames,
+  buildGuestInviteUrl,
+  buildGuestWhatsappMessage
 } = require('../assets/js/helpers.js');
 
 test('normalizeAudioUrl converts Google Drive, Dropbox, and GitHub blob links to direct audio URLs', () => {
@@ -105,4 +110,75 @@ test('resolveDeveloperSocialVisibility hides blank optional fields including Wha
   assert.equal(partial.showShopee, true);
   assert.equal(partial.shopeeHref, 'https://shopee.co.id/studioku');
   assert.equal(partial.showSocialRow, true);
+});
+
+test('computeRsvpStats totals Hadir, Tidak Hadir, and Ragu-ragu accurately from guestbook wishes', () => {
+  assert.deepEqual(computeRsvpStats([]), {
+    total: 0,
+    hadir: 0,
+    tidakHadir: 0,
+    raguRagu: 0
+  });
+
+  const stats = computeRsvpStats([
+    { id: '1', rsvp: 'Hadir' },
+    { id: '2', rsvp: 'Tidak Hadir' },
+    { id: '3', rsvp: 'Ragu-ragu' },
+    { id: '4', rsvp: 'hadir' },
+    { id: '5', rsvp: 'Ragu Ragu' },
+    { id: '6' } // missing rsvp defaults to Hadir
+  ]);
+
+  assert.deepEqual(stats, {
+    total: 6,
+    hadir: 3,
+    tidakHadir: 1,
+    raguRagu: 2
+  });
+});
+
+test('resolveGuestDisplayName resolves URL param or falls back to admin defaultGuestName safely', () => {
+  assert.deepEqual(
+    resolveGuestDisplayName('?to=Bapak%20Hendra%20%26%20Keluarga', 'Sahabat Terbaik'),
+    { name: 'Bapak Hendra & Keluarga', isCustomUrlGuest: true }
+  );
+  assert.deepEqual(
+    resolveGuestDisplayName('?tamu=Siti%20Rahma', 'Tamu Undangan'),
+    { name: 'Siti Rahma', isCustomUrlGuest: true }
+  );
+  assert.deepEqual(
+    resolveGuestDisplayName('', 'Keluarga Besar Mempelai'),
+    { name: 'Keluarga Besar Mempelai', isCustomUrlGuest: false }
+  );
+  assert.deepEqual(
+    resolveGuestDisplayName('?to=100%25%20Hadir%20%ZZ', 'Tamu Undangan'),
+    { name: '100% Hadir %ZZ', isCustomUrlGuest: true }
+  );
+});
+
+test('parseBulkGuestNames preserves academic commas, deduplicates case-insensitively, and builds clean invite links', () => {
+  const existing = [{ id: 'g1', name: 'Dr. Budi Santoso, S.Kom.', note: 'VIP' }];
+  const parsed = parseBulkGuestNames(
+    '\n  dr. budi santoso, s.kom. \n Ibu Siti Aminah, M.Pd.\n\nReza & Partner\nReza & Partner\n',
+    existing,
+    'Teman Kantor'
+  );
+  assert.equal(parsed.length, 2);
+  assert.equal(parsed[0].name, 'Ibu Siti Aminah, M.Pd.');
+  assert.equal(parsed[0].note, 'Teman Kantor');
+  assert.equal(parsed[1].name, 'Reza & Partner');
+
+  const link = buildGuestInviteUrl('https://dexx.id/?admin=1#admin', 'Ibu Siti Aminah, M.Pd.');
+  assert.equal(link, 'https://dexx.id/?to=Ibu%20Siti%20Aminah%2C%20M.Pd.');
+
+  const msg = buildGuestWhatsappMessage({
+    guestName: 'Ibu Siti Aminah',
+    coupleNames: 'Arina & Bagas',
+    eventDate: 'Rabu, 30 Desember 2028',
+    venue: 'Masjid Raya Al-Mashun',
+    inviteUrl: link
+  });
+  assert.match(msg, /Ibu Siti Aminah/);
+  assert.match(msg, /Arina & Bagas/);
+  assert.match(msg, /Ibu%20Siti%20Aminah/);
 });

@@ -179,11 +179,133 @@
     };
   }
 
+  function computeRsvpStats(wishes) {
+    const list = Array.isArray(wishes) ? wishes : [];
+    let hadir = 0;
+    let tidakHadir = 0;
+    let raguRagu = 0;
+
+    for (const item of list) {
+      const raw = String(item?.rsvp || 'Hadir').trim().toLowerCase();
+      if (raw === 'tidak hadir') {
+        tidakHadir += 1;
+      } else if (raw === 'ragu-ragu' || raw === 'ragu ragu') {
+        raguRagu += 1;
+      } else {
+        hadir += 1;
+      }
+    }
+
+    return {
+      total: list.length,
+      hadir,
+      tidakHadir,
+      raguRagu
+    };
+  }
+
+  function resolveGuestDisplayName(searchString, defaultGuestName = 'Tamu Undangan') {
+    const fallback = String(defaultGuestName ?? '').trim() || 'Tamu Undangan';
+    const rawSearch = String(searchString || '');
+    if (!rawSearch) {
+      return { name: fallback, isCustomUrlGuest: false };
+    }
+    try {
+      const queryPart = rawSearch.startsWith('?') ? rawSearch : `?${rawSearch}`;
+      const params = new URLSearchParams(queryPart);
+      const rawParam = params.get('to') || params.get('tamu') || params.get('guest');
+      if (rawParam) {
+        let decoded = rawParam;
+        try {
+          decoded = decodeURIComponent(rawParam);
+        } catch (e) {
+          decoded = rawParam;
+        }
+        const cleaned = String(decoded).trim();
+        if (cleaned) {
+          return { name: cleaned, isCustomUrlGuest: true };
+        }
+      }
+    } catch (e) {}
+    return { name: fallback, isCustomUrlGuest: false };
+  }
+
+  function parseBulkGuestNames(rawText, existingList = [], defaultNote = '') {
+    const lines = String(rawText || '').split(/\r?\n/);
+    const existingNames = new Set(
+      (Array.isArray(existingList) ? existingList : [])
+        .map((g) => String(g?.name || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const cleanNote = String(defaultNote || '').trim();
+    const added = [];
+    const baseTs = Date.now();
+
+    lines.forEach((line, idx) => {
+      const cleanName = line.trim();
+      if (!cleanName) return;
+      const key = cleanName.toLowerCase();
+      if (existingNames.has(key)) return;
+      existingNames.add(key);
+      added.push({
+        id: `guest-${baseTs}-${idx}`,
+        name: cleanName,
+        note: cleanNote,
+        createdAt: baseTs + idx
+      });
+    });
+
+    return added;
+  }
+
+  function buildGuestInviteUrl(currentHref, guestName) {
+    const cleanName = String(guestName || '').trim();
+    const encoded = encodeURIComponent(cleanName || 'Tamu Undangan');
+    try {
+      const parsed = new URL(String(currentHref || 'http://localhost:3000/'));
+      return `${parsed.origin}${parsed.pathname}?to=${encoded}`;
+    } catch (e) {
+      return `?to=${encoded}`;
+    }
+  }
+
+  function buildGuestWhatsappMessage({
+    guestName = 'Tamu Undangan',
+    coupleNames = 'Arina & Bagas',
+    eventDate = '',
+    venue = '',
+    inviteUrl = '',
+    template = ''
+  } = {}) {
+    const defaultTemplate =
+      'Assalamu\'alaikum Wr. Wb. / Salam Sejahtera.\n\n' +
+      'Kepada Yth. Bapak/Ibu/Saudara/i *[NAMA_TAMU]*,\n' +
+      'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Anda untuk menghadiri acara pernikahan kami:\n\n' +
+      '*[MEMPELAI]*\n' +
+      (eventDate ? `Hari/Tanggal: [TANGGAL]\n` : '') +
+      (venue ? `Tempat: [TEMPAT]\n` : '') +
+      '\nBuka undangan digital lengkap di link berikut:\n[LINK_UNDANGAN]\n\n' +
+      'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Anda berkenan hadir dan memberikan doa restu. Terima kasih.';
+
+    const activeTemplate = String(template || '').trim() || defaultTemplate;
+    return activeTemplate
+      .replace(/\[NAMA_TAMU\]/g, String(guestName || 'Tamu Undangan').trim())
+      .replace(/\[MEMPELAI\]/g, String(coupleNames || '').trim())
+      .replace(/\[TANGGAL\]/g, String(eventDate || '').trim())
+      .replace(/\[TEMPAT\]/g, String(venue || '').trim())
+      .replace(/\[LINK_UNDANGAN\]/g, String(inviteUrl || '').trim());
+  }
+
   return {
     normalizeAudioUrl,
     validateAudioUrl,
     splitDataUrlIntoChunks,
     reassembleChunksToDataParts,
-    resolveDeveloperSocialVisibility
+    resolveDeveloperSocialVisibility,
+    computeRsvpStats,
+    resolveGuestDisplayName,
+    parseBulkGuestNames,
+    buildGuestInviteUrl,
+    buildGuestWhatsappMessage
   };
 });
