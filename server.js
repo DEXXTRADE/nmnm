@@ -11,9 +11,17 @@ async function startServer() {
   const app = express();
   const port = process.env.PORT || 3000;
 
-  // Support JSON payload up to 20MB for uploaded photo data
-  app.use(express.json({ limit: '20mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+  // Support JSON payload up to 30MB for uploaded 15MB audio (base64 ~20.5MB) and photo data
+  app.use(express.json({ limit: '30mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+  // Prevent stale browser/CDN caching on mutable runtime JS scripts
+  app.use(['/assets/js/config.js', '/assets/js/app.js', '/assets/js/helpers.js'], (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
 
   const dataDir = path.resolve(__dirname, 'data');
   if (!fs.existsSync(dataDir)) {

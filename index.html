@@ -12,7 +12,7 @@
   <!-- Tailwind CSS CDN for zero-build standalone HTML architecture -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Firebase Modular SDK (npm install firebase) -->
-  <script type="module" src="assets/js/firebase.js"></script>
+  <script type="module" src="assets/js/firebase.js?v=2.5"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -867,7 +867,7 @@
             <div class="p-4 bg-stone-950/70 rounded-2xl border border-stone-800 space-y-2.5">
               <h5 class="text-xs font-bold text-amber-300 uppercase tracking-wider">2. Unggah File Lagu dari Perangkat (MP3 / WAV / OGG / M4A)</h5>
               <p class="text-[11px] text-stone-400 leading-relaxed">
-                Pilih file lagu langsung dari HP atau laptop Anda (maksimal <strong>15 MB</strong>). File akan tersimpan otomatis dan langsung menggantikan lagu lama.
+                Pilih file lagu langsung dari HP atau laptop Anda (maksimal <strong>15 MB</strong>; sinkron otomatis lintas perangkat via server &amp; Firebase Firestore hingga 10 MB). File akan langsung menggantikan lagu lama.
               </p>
               <input id="editMusicFile" type="file" accept="audio/*" class="block w-full text-xs text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-amber-600 file:text-white cursor-pointer" />
             </div>
@@ -1226,51 +1226,51 @@ service cloud.firestore {
             <span class="text-[10px] text-emerald-400 font-medium">Watermark DexxDigital</span>
           </div>
           <p class="text-xs text-stone-300">
-            Informasi ini muncul di bagian bawah website undangan (footer) sebagai media promosi jasa pembuatan web Anda.
+            Informasi ini muncul di bagian bawah website undangan (footer) sebagai media promosi jasa pembuatan web Anda. Semua kolom kontak &amp; media sosial bersifat <strong>opsional</strong> — kosongkan jika tidak ingin ditampilkan.
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] text-stone-400 mb-1">Nama Agensi / Brand:</label>
+              <label for="devAgencyName" class="block text-[11px] text-stone-400 mb-1">Nama Agensi / Brand:</label>
               <input id="devAgencyName" type="text" value="DexxDigital" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 font-medium" />
             </div>
             <div>
-              <label class="block text-[11px] text-stone-400 mb-1">Nomor WhatsApp Developer (Gunakan format 62...):</label>
-              <input id="devWhatsapp" type="text" placeholder="Contoh: 6281234567890" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 font-mono" />
+              <label for="devWhatsapp" class="block text-[11px] text-stone-400 mb-1">Nomor WhatsApp Developer <span class="text-stone-500">(Opsional, format 62...)</span>:</label>
+              <input id="devWhatsapp" type="text" placeholder="Kosongkan jika tidak ditampilkan" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100 font-mono" />
             </div>
           </div>
 
           <div>
-            <label class="block text-[11px] text-stone-400 mb-1">Tagline Jasa Pembuatan Website:</label>
-            <input id="devTagline" type="text" value="Jasa Pembuatan Website Undangan Pernikahan Digital Elegan &amp; Interaktif" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100" />
+            <label for="devTagline" class="block text-[11px] text-stone-400 mb-1">Tagline Jasa Pembuatan Website <span class="text-stone-500">(Opsional)</span>:</label>
+            <input id="devTagline" type="text" placeholder="Kosongkan jika tidak ingin menampilkan tagline" class="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-xs text-stone-100" />
           </div>
 
           <div class="p-3 bg-stone-900/60 rounded-xl border border-stone-800 space-y-3">
-            <span class="text-[11px] font-semibold text-amber-200 block">Media Sosial Developer (Opsional - Tampil Logo Kecil di Footer):</span>
+            <span class="text-[11px] font-semibold text-amber-200 block">Media Sosial Developer (Opsional - kosongkan jika tidak ada, otomatis disembunyikan):</span>
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
+                <label for="devInstagram" class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
                   <svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5" stroke-width="2"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path></svg>
-                  <span>Instagram (Username):</span>
+                  <span>Instagram (Opsional):</span>
                 </label>
-                <input id="devInstagram" type="text" placeholder="Contoh: dexxdigital" class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                <input id="devInstagram" type="text" placeholder="Kosongkan jika tidak ada" class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
               </div>
 
               <div>
-                <label class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
+                <label for="devTiktok" class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
                   <svg class="w-3 h-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.12V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.96-4.49V8.78a8.21 8.21 0 0 0 4.81 1.54V6.87a4.84 4.84 0 0 1-1-.18z"/></svg>
-                  <span>TikTok (Username):</span>
+                  <span>TikTok (Opsional):</span>
                 </label>
-                <input id="devTiktok" type="text" placeholder="Contoh: dexxdigital" class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                <input id="devTiktok" type="text" placeholder="Kosongkan jika tidak ada" class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
               </div>
 
               <div>
-                <label class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
+                <label for="devShopee" class="block text-[10px] text-stone-400 mb-1 flex items-center gap-1">
                   <svg class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                  <span>Shopee (Link Toko):</span>
+                  <span>Shopee (Opsional):</span>
                 </label>
-                <input id="devShopee" type="url" placeholder="https://shopee.co.id/..." class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
+                <input id="devShopee" type="url" placeholder="Kosongkan jika tidak ada" class="w-full px-3 py-1.5 bg-stone-950 border border-stone-700 rounded-lg text-xs text-stone-100" />
               </div>
             </div>
           </div>
@@ -1307,9 +1307,11 @@ service cloud.firestore {
     </div>
   </div>
 
+  <!-- Shared Pure Helpers (Audio URL validation, Firestore Chunking, Dev Socials) -->
+  <script src="assets/js/helpers.js?v=2.5"></script>
   <!-- Master Configuration (GitHub Pages & Multi-Device Sync Ready) -->
-  <script src="assets/js/config.js?v=2.3"></script>
+  <script src="assets/js/config.js?v=2.5"></script>
   <!-- Pure Vanilla JavaScript Application Logic -->
-  <script src="assets/js/app.js?v=2.3"></script>
+  <script src="assets/js/app.js?v=2.5"></script>
 </body>
 </html>
